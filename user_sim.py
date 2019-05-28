@@ -55,7 +55,6 @@ class UserSimulator():
         self.pref_director = random.choice(list_directors)
         self.pref_genre = random.choice(list_genres)
 
-toto = UserSimulator()
-print(toto.pref_director)
-print(toto.user_type)
-print(toto.number_recos)
+    def next(self, agent_action):
+        if "greeting" in agent_action:
+            user_action = "greeting"
