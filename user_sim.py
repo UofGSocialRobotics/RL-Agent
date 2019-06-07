@@ -1,7 +1,7 @@
 import random
 import numpy
 import config
-import json
+import utils
 
 
 class UserSimulator():
@@ -18,6 +18,12 @@ class UserSimulator():
         self.number_recos = 0
         self.current_number_recos = 0
 
+        if config.GENERATE_SENTENCE:
+            self.sentenceDB = utils.load_user_sentence_model(config.USER_SENTENCES)
+
+        if config.GENERATE_VOICE:
+            self.engine = utils.set_voice_engine(config.USER_VOICE)
+
         self.list_actions = []
 
         self.generate_user()
@@ -29,16 +35,12 @@ class UserSimulator():
         self.set_number_recos()
 
     def set_number_recos(self):
-        self.number_recos = numpy.random.choice(numpy.arange(1, 7), p=[0.2, 0.2, 0.15, 0.15, 0.15, 0.15])
+        self.number_recos = numpy.random.choice(numpy.arange(1, 7), p=config.PROBA_NUMBER_MOVIES)
 
     def set_type(self):
         # The prior probabilities for a user being I-Type
         # or P-Type were learned from the Davos data using MLE.
-        type = numpy.random.choice(numpy.arange(0, 2), p=[0.641, 0.359])
-        if type == 0:
-            self.user_type = "P"
-        else:
-            self.user_type = "I"
+        self.user_type = numpy.random.choice(config.ITEMS_USER_TYPE, p=config.PROBA_USER_TYPE)
 
     def set_preferences(self):
         list_actors = []
@@ -57,9 +59,9 @@ class UserSimulator():
             for line in f:
                 line_input = line.split("-")
                 list_directors.append(line_input[0])
-        self.pref_actor = random.choice(list_actors)
-        self.pref_director = random.choice(list_directors)
-        self.pref_genre = random.choice(list_genres)
+        self.pref_actor = numpy.random.choice([[], random.choice(list_actors)], p=config.PROBA_NO_ACTOR)
+        self.pref_director = numpy.random.choice([[], random.choice(list_directors)], p=config.PROBA_NO_DIRECTOR)
+        self.pref_genre = numpy.random.choice([[], random.choice(list_genres)], p=config.PROBA_NO_GENRE)
 
     def load_actions_lexicon(self, path):
         with open(path) as f:
@@ -76,28 +78,38 @@ class UserSimulator():
         # Todo User can say No to a request
         # Todo User can request things after being recommended a movie
         # Todo Add NLG
+        # Todo actions are only inform and request (askActor = request(actor))
 
         if self.number_recos > self.current_number_recos:
             if "start" in agent_action['intent']:
                 user_intention = "greeting"
             elif "request" in agent_action['intent']:
                 if "genre" in agent_action['intent']:
-                    user_intention = 'inform'
-                    user_entity = self.pref_genre
-                    entity_type = 'genre'
-                    polarity = "+"
+                    if self.pref_genre:
+                        user_intention = 'inform(genre)'
+                        user_entity = self.pref_genre
+                        entity_type = 'genre'
+                        polarity = "+"
+                    else:
+                        user_intention = 'no'
                 elif "director" in agent_action['intent']:
-                    user_intention = 'inform'
-                    user_entity = self.pref_director
-                    entity_type = 'cast'
-                    polarity = "+"
+                    if self.pref_director:
+                        user_intention = 'inform(director)'
+                        user_entity = self.pref_director
+                        entity_type = 'cast'
+                        polarity = "+"
+                    else:
+                        user_intention = 'no'
                 elif "actor" in agent_action['intent']:
-                    user_intention = 'inform'
-                    user_entity = self.pref_actor
-                    entity_type = 'cast'
-                    polarity = "+"
+                    if self.pref_actor:
+                        user_intention = 'inform(actor)'
+                        user_entity = self.pref_actor
+                        entity_type = 'cast'
+                        polarity = "+"
+                    else:
+                        user_intention = 'no'
             elif "inform" in agent_action['intent']:
-                user_intention = "request"
+                user_intention = numpy.random.choice(config.ITEMS_REQUEST_AFTER_MOVIE, p=config.PROBA_REQUEST_AFTER_MOVIE)
                 self.current_number_recos += 1
             else:
                 user_intention = "yes"

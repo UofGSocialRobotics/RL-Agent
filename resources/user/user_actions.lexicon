@@ -4,3 +4,7 @@ request
 goodbye
 yes
 no
+askActor
+askGenre
+askPlot
+request_more

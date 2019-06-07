@@ -3,13 +3,17 @@ import urllib.request
 import json
 from pathlib import Path
 import config
+import utils
 
 
 class Agent():
     def __init__(self):
-        self.list_actions = []
 
-        self.load_actions_lexicon(config.AGENT_ACTIONS)
+        if config.GENERATE_SENTENCE:
+            self.sentenceDB = utils.load_agent_sentence_model(config.AGENT_SENTENCES)
+
+        if config.GENERATE_VOICE:
+            self.engine = utils.set_voice_engine(config.AGENT_VOICE)
 
         self.currState = "start"
         # Do we store the users preferences in a user model?
@@ -22,15 +26,6 @@ class Agent():
         self.user_model = {"liked_cast": [], "disliked_cast": [], "liked_genres": [], 'disliked_genres': [],
                            'liked_movies': [], 'disliked_movies': []}
         self.load_model(config.DM_MODEL)
-
-    def load_actions_lexicon(self, path):
-        with open(path) as f:
-            for line in f:
-                line_input = line.replace('\n', '')
-                self.list_actions.append(line_input)
-
-    def pick_action(self):
-        return random.choice(self.list_actions)
 
     # Parse the model.csv file and transform that into a dict of Nodes representing the scenario
     def load_model(self, path):
@@ -89,7 +84,6 @@ class Agent():
                 return movie['title']
 
     def queryMoviesList(self):
-        # Todo Smart blending to get a recommendation matching with both genre and cast
         movies_with_cast_list = []
         movies_with_genres_list = []
         if not self.user_model['liked_genres'] and not self.user_model['liked_cast']:
@@ -177,7 +171,6 @@ class Agent():
         self.movie['plot'] = movie_info.get("Plot")
         self.movie['actors'] = movie_info.get("Actors")
         self.movie['genres'] = movie_info.get("Genre")
-
 
 # A node corresponds to a specific state of the dialogue. It contains:
 # - a state ID (int)

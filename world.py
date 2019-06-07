@@ -1,24 +1,27 @@
 import user_sim
 import rule_based_agent
+import random
+import utils
 
 def main():
     user = user_sim.UserSimulator()
     agent = rule_based_agent.Agent()
-    print("User-Type: " + user.user_type)
-    print("Preferences: " + user.pref_director + " - " + user.pref_genre + " - " + user.pref_actor)
-    print("Number of Recos: " + str(user.number_recos))
 
     agent_action = {'intent': "start", 'movie': None}
 
     while agent_action['intent'] not in "goodbye":
+
+        # print user sentence
         user_action = user.next(agent_action)
-        if user_action['entity']:
-            print("U: " + user_action['intent'] + " likes " + user_action['entity'])
-        else:
-            print("U: " + user_action['intent'])
+        user_action_to_say = random.choice(user.sentenceDB[user_action['intent']])
+        print("U: " + utils.generate_entity_related_sentence(user_action_to_say, user_action['entity']))
+
+        # print agent sentence
         agent_action = agent.next(user_action)
-        print("A: " + agent_action['intent'] + "   " + agent_action['movie']['title'])
+        agent_action_to_say = random.choice(agent.sentenceDB[agent_action['intent']])
+        print("A: " + utils.generate_movie_related_sentence(agent_action_to_say, agent_action['movie']))
 
 if __name__ == '__main__':
     main()
+
 
