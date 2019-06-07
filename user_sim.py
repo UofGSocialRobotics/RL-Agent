@@ -22,7 +22,7 @@ class UserSimulator():
             self.sentenceDB = utils.load_user_sentence_model(config.USER_SENTENCES)
 
         if config.GENERATE_VOICE:
-            self.engine = utils.set_voice_engine(config.USER_VOICE)
+            self.engine = utils.set_voice_engine("U", config.USER_VOICE)
 
         self.list_actions = []
 

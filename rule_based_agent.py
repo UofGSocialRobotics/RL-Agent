@@ -13,7 +13,7 @@ class Agent():
             self.sentenceDB = utils.load_agent_sentence_model(config.AGENT_SENTENCES)
 
         if config.GENERATE_VOICE:
-            self.engine = utils.set_voice_engine(config.AGENT_VOICE)
+            self.engine = utils.set_voice_engine("A", config.AGENT_VOICE)
 
         self.currState = "start"
         # Do we store the users preferences in a user model?

@@ -1,10 +1,16 @@
 import pyttsx3
+import random
+import win32com.client as wincl
 
 
-def set_voice_engine(voice):
-    engine = pyttsx3.init()
-    engine.setProperty('voice', voice)
-    return engine
+def set_voice_engine(who, voice):
+    if "U" in who:
+        engine = wincl.Dispatch("SAPI.SpVoice")
+        return engine
+    else:
+        engine = pyttsx3.init()
+        engine.setProperty('voice', voice)
+        return engine
 
 
 def load_agent_sentence_model(path):
@@ -18,6 +24,7 @@ def load_agent_sentence_model(path):
                 sentenceDB[line_input[0]] = [line_input[2]]
     return sentenceDB
 
+
 def load_user_sentence_model(path):
     sentenceDB = {}
     with open(path) as f:
@@ -30,12 +37,33 @@ def load_user_sentence_model(path):
     return sentenceDB
 
 
-def generate_entity_related_sentence(sentence, userpref):
+def generate_user_sentence(user, user_action, agent_action):
+    sentence = random.choice(user.sentenceDB[user_action['intent']])
+    sentence_to_say = replace_in_user_sentence(sentence, user_action, agent_action)
+    print("U: " + sentence_to_say)
+    user.engine.Speak(sentence_to_say)
+
+
+def generate_agent_sentence(agent, action):
+    sentence = random.choice(agent.sentenceDB[action['intent']])
+    sentence_to_say = replace_in_agent_sentence(sentence, action['movie'])
+    print("A: " + sentence_to_say)
+    agent.engine.say(sentence_to_say)
+    agent.engine.runAndWait()
+
+
+def replace_in_user_sentence(sentence, user_action, agent_action):
+    if "greet" in agent_action['intent']:
+        if "yes" in user_action['intent']:
+            sentence = "I'm doing pretty good! Thanks for asking."
+        else:
+            sentence = "I'm not feeling that well..."
     if "#entity" in sentence:
-        sentence = sentence.replace("#entity", userpref)
+        sentence = sentence.replace("#entity", user_action['entity'])
     return sentence
 
-def generate_movie_related_sentence(sentence, movie):
+
+def replace_in_agent_sentence(sentence, movie):
     if "#title" in sentence:
         # movListString = ""
         # for mov in self.moviesList:
