@@ -15,7 +15,7 @@ PROBA_NO_ACTOR = [0.2, 0.8]
 PROBA_NO_DIRECTOR = [0.2, 0.8]
 PROBA_NO_GENRE = [0.2, 0.8]
 # Todo Make sure it matches with actual actions
-ITEMS_REQUEST_AFTER_MOVIE = ['yes', 'no', 'request(genre)', 'request(actor)', 'request(plot)', 'request(more)', 'inform(watched)']
+ITEMS_REQUEST_AFTER_MOVIE = ['yes', 'no', 'request(genre)', 'request(actor)', 'request(plot)', 'request(another)', 'inform(watched)']
 PROBA_REQUEST_AFTER_MOVIE = [0.15, 0.1, 0.1, 0.1, 0.2, 0.2, 0.15]
 PROBA_NUMBER_MOVIES = [0.2, 0.2, 0.15, 0.15, 0.15, 0.15]
 ITEMS_USER_TYPE = ["P", "I"]

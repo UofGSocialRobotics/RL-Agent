@@ -18,7 +18,8 @@ class UserSimulator():
         self.number_recos = 0
         self.current_number_recos = 0
 
-        self.movie_agenda = []
+        self.movie_agenda = list(config.ITEMS_REQUEST_AFTER_MOVIE)
+        self.movie_agenda_probas = list(config.PROBA_REQUEST_AFTER_MOVIE)
 
         if config.GENERATE_SENTENCE:
             self.sentenceDB = utils.load_user_sentence_model(config.USER_SENTENCES)
@@ -28,6 +29,7 @@ class UserSimulator():
 
         self.list_actions = []
 
+        print(self.movie_agenda)
         self.generate_user()
         self.load_actions_lexicon(config.USER_ACTIONS)
 
@@ -77,9 +79,6 @@ class UserSimulator():
         polarity = ''
         user_intention = "yes"
 
-        # Todo Add Acks
-        # Todo Add CS
-
         if self.number_recos > self.current_number_recos:
             if "start" in agent_action['intent']:
                 user_intention = "greeting"
@@ -113,13 +112,44 @@ class UserSimulator():
                 elif "opinion" in agent_action['intent']:
                     user_intention = 'inform(opinion)'
             elif "inform" in agent_action['intent']:
-                user_intention = numpy.random.choice(config.ITEMS_REQUEST_AFTER_MOVIE, p=config.PROBA_REQUEST_AFTER_MOVIE)
-                self.current_number_recos += 1
+                if "(movie)" in agent_action['intent']:
+                    self.movie_agenda = list(config.ITEMS_REQUEST_AFTER_MOVIE)
+                    self.movie_agenda_probas = list(config.PROBA_REQUEST_AFTER_MOVIE)
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+                elif "(genre)" in agent_action['intent']:
+                    if 'request(actor)' and 'request(plot)' in self.movie_agenda:
+                        self.movie_agenda.remove('request(genre)')
+                        self.movie_agenda.remove('inform(watched)')
+                        self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
+                        user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    else:
+                        self.movie_agenda = ['yes', 'no', 'request(another)']
+                        self.movie_agenda_probas = [0.33, 0.33, 0.34]
+                        user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                elif "(actor)" in agent_action['intent']:
+                    if 'request(genre)' and 'request(plot)' in self.movie_agenda:
+                        self.movie_agenda.remove('request(actor)')
+                        self.movie_agenda.remove('inform(watched)')
+                        self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
+                        user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    else:
+                        self.movie_agenda = ['yes', 'no', 'request(another)']
+                        self.movie_agenda_probas = [0.33, 0.33, 0.34]
+                        user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                elif "(plot)" in agent_action['intent']:
+                    if 'request(actor)' and 'request(genre)' in self.movie_agenda:
+                        self.movie_agenda.remove('request(plot)')
+                        self.movie_agenda.remove('inform(watched)')
+                        self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
+                        user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    else:
+                        self.movie_agenda = ['yes', 'no', 'request(another)']
+                        self.movie_agenda_probas = [0.33, 0.33, 0.34]
+                        user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
             else:
                 user_intention = "yes"
         else:
-            # Todo add condition so that the user can inform(why) even after the last movie.
-            # Todo User will say no to request(why) otherwise
             if "why" in agent_action['intent']:
                 user_intention = 'inform(why)'
             elif "opinion" in agent_action['intent']:
@@ -127,11 +157,18 @@ class UserSimulator():
             else:
                 user_intention = "no"
 
-        # Todo build Social Reasoner
-        #user_cs = 'HE'
-        user_cs = random.choice(config.CS_LABELS)
+        user_cs = self.pick_cs()
+
         user_action = self.msg_to_json(user_intention, user_cs, user_entity, entity_type, polarity)
         return user_action
+
+    def pick_cs(self):
+        # Todo build Social Reasoner
+        if "P" in self.user_type:
+            user_cs = 'NONE'
+        else:
+            user_cs = random.choice(config.CS_LABELS)
+        return user_cs
 
     def msg_to_json(self, intent, cs, entity, entity_type, polarity):
         frame = {'intent': intent, 'cs': cs, 'entity': entity, 'entity_type': entity_type, 'polarity': polarity}

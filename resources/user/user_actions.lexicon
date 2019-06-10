@@ -2,7 +2,7 @@ greeting
 inform(watched)
 inform(why)
 inform(opinion)
-request(more)
+request(another)
 request(actor)
 request(genre)
 request(plot)
