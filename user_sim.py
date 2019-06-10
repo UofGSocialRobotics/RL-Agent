@@ -18,6 +18,8 @@ class UserSimulator():
         self.number_recos = 0
         self.current_number_recos = 0
 
+        self.movie_agenda = []
+
         if config.GENERATE_SENTENCE:
             self.sentenceDB = utils.load_user_sentence_model(config.USER_SENTENCES)
 
@@ -120,6 +122,8 @@ class UserSimulator():
             # Todo User will say no to request(why) otherwise
             if "why" in agent_action['intent']:
                 user_intention = 'inform(why)'
+            elif "opinion" in agent_action['intent']:
+                user_intention = 'inform(opinion)'
             else:
                 user_intention = "no"
 

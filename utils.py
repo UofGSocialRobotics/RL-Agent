@@ -38,11 +38,12 @@ def load_user_sentence_model(path):
 
 
 def generate_user_sentence(user, user_action, agent_action):
-    if user.sentenceDB[user_action['intent']][user_action['cs']]:
-        sentence = random.choice(user.sentenceDB[user_action['intent']][user_action['cs']])
+    new_user_action = select_specific_action(user_action, agent_action)
+    if user.sentenceDB[new_user_action['intent']][new_user_action['cs']]:
+        sentence = random.choice(user.sentenceDB[new_user_action['intent']][new_user_action['cs']])
     else:
-        sentence = random.choice(user.sentenceDB[user_action['intent']]['NONE'])
-    sentence_to_say = replace_in_user_sentence(sentence, user_action, agent_action)
+        sentence = random.choice(user.sentenceDB[new_user_action['intent']]['NONE'])
+    sentence_to_say = replace_in_user_sentence(sentence, new_user_action, agent_action)
     print("U: " + sentence_to_say)
     if config.GENERATE_VOICE:
         user.engine.Speak(sentence_to_say)
@@ -57,19 +58,30 @@ def generate_agent_sentence(agent, action):
         agent.engine.runAndWait()
 
 
-def replace_in_user_sentence(sentence, user_action, agent_action):
+def select_specific_action(user_action, agent_action):
+    new_action = dict(user_action)
     if "greet" in agent_action['intent']:
-        if "yes" in user_action['intent']:
-            sentence = "I'm doing pretty good! Thanks for asking."
+        if "yes" in new_action['intent']:
+            new_action['intent'] = 'positive_greeting'
         else:
-            sentence = "I'm not feeling that well..."
-    if "no" in user_action['intent']:
+            new_action['intent'] = 'negative_greeting'
+    if "yes" in new_action['intent']:
+        if '(another)' in agent_action['intent']:
+            new_action['intent'] = 'yes(another)'
+        else: #'(movie)' in agent_action['intent']:
+            new_action['intent'] = 'yes(movie)'
+    elif "no" in new_action['intent']:
         if "request(genre)" in agent_action['intent']:
-            sentence = "I don't have any favorite genre"
+            new_action['intent'] = 'inform(genre=no)'
         elif "request(actor)" in agent_action['intent']:
-            sentence = "I don't have any favorite actor"
+            new_action['intent'] = 'inform(actor=no)'
         elif "request(director)" in agent_action['intent']:
-            sentence = "I don't have any favorite director"
+            new_action['intent'] = 'inform(director=no)'
+        elif "request(another)" in agent_action['intent']:
+            new_action['intent'] = 'no(another)'
+    return new_action
+
+def replace_in_user_sentence(sentence, user_action, agent_action):
     if "#entity" in sentence:
         sentence = sentence.replace("#entity", user_action['entity'])
     return sentence
