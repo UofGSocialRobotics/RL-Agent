@@ -148,6 +148,7 @@ class Agent():
             'romance': 10749,
             'romantic': 10749,
             'sci-fi': 878,
+            'scifi': 878,
             'syfy': 878,
             'thriller': 53,
             'war': 10752,
@@ -171,6 +172,9 @@ class Agent():
         self.movie['plot'] = movie_info.get("Plot")
         self.movie['actors'] = movie_info.get("Actors")
         self.movie['genres'] = movie_info.get("Genre")
+
+    def select_cs(self):
+        return "SD"
 
 # A node corresponds to a specific state of the dialogue. It contains:
 # - a state ID (int)

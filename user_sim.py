@@ -75,10 +75,8 @@ class UserSimulator():
         polarity = ''
         user_intention = "yes"
 
-        # Todo User can say No to a request
-        # Todo User can request things after being recommended a movie
-        # Todo Add NLG
-        # Todo actions are only inform and request (askActor = request(actor))
+        # Todo Add Acks
+        # Todo Add CS
 
         if self.number_recos > self.current_number_recos:
             if "start" in agent_action['intent']:
@@ -108,16 +106,29 @@ class UserSimulator():
                         polarity = "+"
                     else:
                         user_intention = 'no'
+                elif "why" in agent_action['intent']:
+                    user_intention = 'inform(why)'
+                elif "opinion" in agent_action['intent']:
+                    user_intention = 'inform(opinion)'
             elif "inform" in agent_action['intent']:
                 user_intention = numpy.random.choice(config.ITEMS_REQUEST_AFTER_MOVIE, p=config.PROBA_REQUEST_AFTER_MOVIE)
                 self.current_number_recos += 1
             else:
                 user_intention = "yes"
         else:
-            user_intention = "no"
-        user_action = self.msg_to_json(user_intention, user_entity, entity_type, polarity)
+            # Todo add condition so that the user can inform(why) even after the last movie.
+            # Todo User will say no to request(why) otherwise
+            if "why" in agent_action['intent']:
+                user_intention = 'inform(why)'
+            else:
+                user_intention = "no"
+
+        # Todo build Social Reasoner
+        #user_cs = 'HE'
+        user_cs = random.choice(config.CS_LABELS)
+        user_action = self.msg_to_json(user_intention, user_cs, user_entity, entity_type, polarity)
         return user_action
 
-    def msg_to_json(self, intent, entity, entity_type, polarity):
-        frame = {'intent': intent, 'entity': entity, 'entity_type': entity_type, 'polarity': polarity}
+    def msg_to_json(self, intent, cs, entity, entity_type, polarity):
+        frame = {'intent': intent, 'cs': cs, 'entity': entity, 'entity_type': entity_type, 'polarity': polarity}
         return frame

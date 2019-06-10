@@ -12,10 +12,12 @@ def main():
 
         # print user sentence
         user_action = user.next(agent_action)
+        #print(user_action)
         utils.generate_user_sentence(user, user_action, agent_action)
 
         # print agent sentence
         agent_action = agent.next(user_action)
+        # print(agent_action)
         utils.generate_agent_sentence(agent, agent_action)
 
 

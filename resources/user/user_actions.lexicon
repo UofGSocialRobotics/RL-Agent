@@ -1,10 +1,11 @@
 greeting
-inform
-request
+inform(watched)
+inform(why)
+inform(opinion)
+request(more)
+request(actor)
+request(genre)
+request(plot)
 goodbye
 yes
 no
-askActor
-askGenre
-askPlot
-request_more

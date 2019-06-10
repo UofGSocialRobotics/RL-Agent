@@ -1,6 +1,7 @@
 import pyttsx3
 import random
 import win32com.client as wincl
+import config
 
 
 def set_voice_engine(who, voice):
@@ -30,26 +31,30 @@ def load_user_sentence_model(path):
     with open(path) as f:
         for line in f:
             line_input = line.split(",")
-            if sentenceDB.get(line_input[0]) is not None:
-                sentenceDB.get(line_input[0]).append(line_input[2])
-            else:
-                sentenceDB[line_input[0]] = [line_input[2]]
+            if sentenceDB.get(line_input[0]) is None:
+                sentenceDB[line_input[0]] = {'SD': [], 'VSN': [], 'PR': [], 'HE': [], 'NONE': []}
+            sentenceDB[line_input[0]][line_input[1]].append(line_input[2])
     return sentenceDB
 
 
 def generate_user_sentence(user, user_action, agent_action):
-    sentence = random.choice(user.sentenceDB[user_action['intent']])
+    if user.sentenceDB[user_action['intent']][user_action['cs']]:
+        sentence = random.choice(user.sentenceDB[user_action['intent']][user_action['cs']])
+    else:
+        sentence = random.choice(user.sentenceDB[user_action['intent']]['NONE'])
     sentence_to_say = replace_in_user_sentence(sentence, user_action, agent_action)
     print("U: " + sentence_to_say)
-    user.engine.Speak(sentence_to_say)
+    if config.GENERATE_VOICE:
+        user.engine.Speak(sentence_to_say)
 
 
 def generate_agent_sentence(agent, action):
     sentence = random.choice(agent.sentenceDB[action['intent']])
     sentence_to_say = replace_in_agent_sentence(sentence, action['movie'])
     print("A: " + sentence_to_say)
-    agent.engine.say(sentence_to_say)
-    agent.engine.runAndWait()
+    if config.GENERATE_VOICE:
+        agent.engine.say(sentence_to_say)
+        agent.engine.runAndWait()
 
 
 def replace_in_user_sentence(sentence, user_action, agent_action):
@@ -58,6 +63,13 @@ def replace_in_user_sentence(sentence, user_action, agent_action):
             sentence = "I'm doing pretty good! Thanks for asking."
         else:
             sentence = "I'm not feeling that well..."
+    if "no" in user_action['intent']:
+        if "request(genre)" in agent_action['intent']:
+            sentence = "I don't have any favorite genre"
+        elif "request(actor)" in agent_action['intent']:
+            sentence = "I don't have any favorite actor"
+        elif "request(director)" in agent_action['intent']:
+            sentence = "I don't have any favorite director"
     if "#entity" in sentence:
         sentence = sentence.replace("#entity", user_action['entity'])
     return sentence

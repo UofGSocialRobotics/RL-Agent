@@ -1,4 +1,7 @@
 
+CS_LABELS = ["SD", "PR", "HE", "VSN", "NONE"]
+CS_LABELS_DICT = {'SD': [], 'VSN': [], 'PR': [], 'HE': [], 'NONE': []}
+
 # User related
 USER_LIST_ACTORS = "./resources/user/user_model/actor2id.lexicon"
 USER_LIST_GENRES = "./resources/user/user_model/genre2id.lexicon"
@@ -11,14 +14,14 @@ USER_VOICE = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_
 PROBA_NO_ACTOR = [0.2, 0.8]
 PROBA_NO_DIRECTOR = [0.2, 0.8]
 PROBA_NO_GENRE = [0.2, 0.8]
-ITEMS_REQUEST_AFTER_MOVIE = ['yes', 'no', 'askGenre', 'askActor', 'askPlot', 'request_more']
-PROBA_REQUEST_AFTER_MOVIE = [0.2, 0.2, 0.1, 0.1, 0.2, 0.2]
+# Todo Make sure it matches with actual actions
+ITEMS_REQUEST_AFTER_MOVIE = ['yes', 'no', 'request(genre)', 'request(actor)', 'request(plot)', 'request(more)', 'inform(watched)']
+PROBA_REQUEST_AFTER_MOVIE = [0.15, 0.1, 0.1, 0.1, 0.2, 0.2, 0.15]
 PROBA_NUMBER_MOVIES = [0.2, 0.2, 0.15, 0.15, 0.15, 0.15]
 ITEMS_USER_TYPE = ["P", "I"]
 PROBA_USER_TYPE = [0.641, 0.359]
 
 # Agent related
-AGENT_ACTIONS = "./resources/agent/agent_actions.lexicon"
 AGENT_SENTENCES = "./resources/agent/agent_sentence_DB.csv"
 DM_MODEL = "./resources/agent/model.csv"
 AGENT_VOICE = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_ZIRA_11.0"

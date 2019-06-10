@@ -7,11 +7,11 @@ request(reason_like),request(genre),TRUE,,
 request(genre),request(director),TRUE,,
 request(director),request(actor),TRUE,,
 request(actor),inform(movie),TRUE,,
-inform(movie),request(another),TRUE,request_more-inform(movie),askPlot-inform(plot),no-request(why),askActor-inform(actor),askGenre-inform(genre),alreadyWatched-request(opinion)
+inform(movie),request(another),TRUE,request(more)-inform(movie),request(plot)-inform(plot),no-request(why),request(actor)-inform(actor),request(genre)-inform(genre),inform(watched)-request(opinion)
 request(another),inform(movie),TRUE,no-bye,retrieveList-list(movies)
 request(feedback),bye,TRUE,,
-inform(plot),inform(movie),TRUE,askActor-inform(actor),askGenre-inform(genre),yes-request(another),no-request(why),askPlot-inform(plot)
-inform(actor),inform(movie),TRUE,askPlot-inform(plot),askGenre-inform(genre),yes-request(another),no-request(why),askActor-inform(actor)
-inform(genre),inform(movie),TRUE,askPlot-inform(plot),askActor-inform(actor),yes-request(another),no-request(why),askGenre-inform(genre)
+inform(plot),inform(movie),TRUE,request(actor)-inform(actor),request(genre)-inform(genre),yes-request(another),no-request(why),request(plot)-inform(plot),inform(watched)-request(opinion)
+inform(actor),inform(movie),TRUE,request(plot)-inform(plot),request(genre)-inform(genre),yes-request(another),no-request(why),request(actor)-inform(actor),inform(watched)-request(opinion)
+inform(genre),inform(movie),TRUE,request(plot)-inform(plot),request(actor)-inform(actor),yes-request(another),no-request(why),request(genre)-inform(genre),inform(watched)-request(opinion)
 request(why),request(another),TRUE,,
 request(opinion),request(another),TRUE,,
