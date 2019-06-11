@@ -29,7 +29,6 @@ class UserSimulator():
 
         self.list_actions = []
 
-        print(self.movie_agenda)
         self.generate_user()
         self.load_actions_lexicon(config.USER_ACTIONS)
 
@@ -111,6 +110,7 @@ class UserSimulator():
                     user_intention = 'inform(why)'
                 elif "opinion" in agent_action['intent']:
                     user_intention = 'inform(opinion)'
+            # Todo Do something better here
             elif "inform" in agent_action['intent']:
                 if "(movie)" in agent_action['intent']:
                     self.movie_agenda = list(config.ITEMS_REQUEST_AFTER_MOVIE)
@@ -120,7 +120,8 @@ class UserSimulator():
                 elif "(genre)" in agent_action['intent']:
                     if 'request(actor)' and 'request(plot)' in self.movie_agenda:
                         self.movie_agenda.remove('request(genre)')
-                        self.movie_agenda.remove('inform(watched)')
+                        if 'inform(watched)' in self.movie_agenda:
+                            self.movie_agenda.remove('inform(watched)')
                         self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
                         user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                     else:
@@ -130,7 +131,8 @@ class UserSimulator():
                 elif "(actor)" in agent_action['intent']:
                     if 'request(genre)' and 'request(plot)' in self.movie_agenda:
                         self.movie_agenda.remove('request(actor)')
-                        self.movie_agenda.remove('inform(watched)')
+                        if 'inform(watched)' in self.movie_agenda:
+                            self.movie_agenda.remove('inform(watched)')
                         self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
                         user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                     else:
@@ -140,7 +142,8 @@ class UserSimulator():
                 elif "(plot)" in agent_action['intent']:
                     if 'request(actor)' and 'request(genre)' in self.movie_agenda:
                         self.movie_agenda.remove('request(plot)')
-                        self.movie_agenda.remove('inform(watched)')
+                        if 'inform(watched)' in self.movie_agenda:
+                            self.movie_agenda.remove('inform(watched)')
                         self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
                         user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                     else:

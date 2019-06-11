@@ -1,12 +1,9 @@
-import random
 import urllib.request
 import json
-from pathlib import Path
 import config
 import utils
 
 
-# Todo Add Acks
 # Todo Add CS
 
 class Agent():
@@ -14,6 +11,7 @@ class Agent():
 
         if config.GENERATE_SENTENCE:
             self.sentenceDB = utils.load_agent_sentence_model(config.AGENT_SENTENCES)
+            self.ackDB = utils.load_agent_ack_model(config.AGENT_ACKS)
 
         if config.GENERATE_VOICE:
             self.engine = utils.set_voice_engine("A", config.AGENT_VOICE)
@@ -168,6 +166,7 @@ class Agent():
 
     def set_movie_info(self, movie_name):
         movie_name = movie_name.replace(" ", "%20")
+        movie_name = movie_name.replace("é", "e")
         omdbURL = config.OMDB_SEARCH_MOVIE_INFO + movie_name + "&r=json" + "&apikey=" + config.OMDB_KEY
         data = urllib.request.urlopen(omdbURL)
         result = data.read()

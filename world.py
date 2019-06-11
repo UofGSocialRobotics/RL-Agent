@@ -7,7 +7,7 @@ def main():
     agent = rule_based_agent.Agent()
     print(user.number_recos)
 
-    agent_action = {'intent': "start", 'movie': None}
+    agent_action = agent_previous_action = {'intent': "start", 'movie': None}
 
     while agent_action['intent'] not in "goodbye":
 
@@ -17,7 +17,8 @@ def main():
 
         # print user sentence
         agent_action = agent.next(user_action)
-        utils.generate_agent_sentence(agent, agent_action)
+        utils.generate_agent_sentence(agent, agent_action, agent_previous_action, user_action)
+        agent_previous_action = agent_action
 
 
 if __name__ == '__main__':

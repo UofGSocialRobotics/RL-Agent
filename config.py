@@ -23,8 +23,10 @@ PROBA_USER_TYPE = [0.641, 0.359]
 
 # Agent related
 AGENT_SENTENCES = "./resources/agent/agent_sentence_DB.csv"
+AGENT_ACKS = "./resources/agent/ack_db.csv"
 DM_MODEL = "./resources/agent/model.csv"
 AGENT_VOICE = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_ZIRA_11.0"
+USE_ACKS = True
 
 # Other
 MOVIEDB_KEY = "6e3c2d4a2501c86cd7e0571ada291f55"
@@ -36,3 +38,4 @@ OMDB_KEY = "be72fd68"
 
 GENERATE_SENTENCE = True
 GENERATE_VOICE = False
+
