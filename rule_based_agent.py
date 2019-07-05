@@ -60,7 +60,7 @@ class Agent():
         if self.currState in ("inform(movie)", "inform(plot)", "inform(actor)", "inform(genre)"):
             if "yes" in self.user_action['intent']:
                 self.user_model['liked_movies'].append(self.movie['title'])
-            elif any(s in self.user_action['intent'] for s in ('request(another)', 'inform(watched)', 'no')):
+            elif any(s in self.user_action['intent'] for s in ('request(more)', 'inform(watched)', 'no')):
                 self.user_model['disliked_movies'].append(self.movie['title'])
 
         # Get a movie recommendation title

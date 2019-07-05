@@ -125,7 +125,7 @@ class UserSimulator():
                         self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
                         user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                     else:
-                        self.movie_agenda = ['yes', 'no', 'request(another)']
+                        self.movie_agenda = ['yes', 'no', 'request(more)']
                         self.movie_agenda_probas = [0.33, 0.33, 0.34]
                         user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                 elif "(actor)" in agent_action['intent']:
@@ -136,7 +136,7 @@ class UserSimulator():
                         self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
                         user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                     else:
-                        self.movie_agenda = ['yes', 'no', 'request(another)']
+                        self.movie_agenda = ['yes', 'no', 'request(more)']
                         self.movie_agenda_probas = [0.33, 0.33, 0.34]
                         user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                 elif "(plot)" in agent_action['intent']:
@@ -147,7 +147,7 @@ class UserSimulator():
                         self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
                         user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                     else:
-                        self.movie_agenda = ['yes', 'no', 'request(another)']
+                        self.movie_agenda = ['yes', 'no', 'request(more)']
                         self.movie_agenda_probas = [0.33, 0.33, 0.34]
                         user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
             else:
