@@ -40,3 +40,4 @@ OMDB_KEY = "be72fd68"
 GENERATE_SENTENCE = True
 GENERATE_VOICE = False
 
+TRAINING_DIALOGUE_PATH = "./resources/training_dialogues/"

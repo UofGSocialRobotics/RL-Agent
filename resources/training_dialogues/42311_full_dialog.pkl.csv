@@ -1,0 +1,4 @@
+1,42311_full_dialog.pkl,SARA, ack,,greeting,NONE, USER, greeting,NONE
+1,42311_full_dialog.pkl,SARA, ack,,introduce,NONE, USER, negate,NONE
+1,42311_full_dialog.pkl,SARA, ack,NONE,request,HE, USER, negate,NONE
+1,42311_full_dialog.pkl,SARA, ack,,bye,NONE, USER, bye,NONE
