@@ -4,6 +4,7 @@ import csv
 
 from sklearn.ensemble import RandomForestClassifier
 
+import numpy as np
 import config
 import pandas as pd
 from sklearn.neural_network import MLPClassifier, MLPRegressor
@@ -14,6 +15,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
+from sklearn import metrics
 
 
 def build_raw_dataset():
@@ -81,6 +83,42 @@ def build_count_dataset():
                     agent_cs = [0, 0, 0, 0, 0]
                     user_cs = [0, 0, 0, 0, 0]
 
+def build_reciprocity_dataset():
+    rapport_dict, groups_dict = load_rapport_and_groups_dict()
+    with open(config.TRAINING_DIALOGUE_PATH + "reciprocity_dataset.csv", mode='w', newline='') as csv_file:
+        dataset = csv.writer(csv_file, delimiter=',')
+        tmp_row = []
+        rec_agent = [0, 0, 0, 0, 0, 0]
+        rec_user = [0, 0, 0, 0, 0]
+        agent_cs = [0, 0, 0, 0, 0]
+        for root, dirs, files in os.walk(config.TRAINING_DIALOGUE_PATH):
+            for name in files:
+                turn = 1
+                if name.endswith(".csv") and "dataset" not in name and "rapport" not in name:
+                    with open(config.TRAINING_DIALOGUE_PATH + name, mode='rt') as csv_file:
+                        interaction = csv.reader(csv_file, delimiter=',')
+                        for row in interaction:
+                            if turn == 1:
+                                tmp_row.append(row[1].replace("_full_dialog.pkl", ""))
+                                tmp_row.append(rapport_dict[row[1].replace("_full_dialog.pkl", "")])
+                                group = groups_dict[row[1].replace("_full_dialog.pkl", "")]
+                                if group in '1' or group in '2' or group in '3':
+                                    tmp_row.append(0)
+                                else:
+                                    tmp_row.append(1)
+                                user_strat = row[9]
+                            else:
+                                if "NONE" not in user_strat:
+                                    rec_agent = increment_agent_rec(row[4], rec_agent)
+                            agent_cs = count(row[6], agent_cs)
+                            turn += 1
+                    tmp_row.extend(agent_cs)
+                    tmp_row.extend(rec_agent)
+                    dataset.writerow(tmp_row)
+                    tmp_row = []
+                    agent_cs = [0, 0, 0, 0, 0]
+                    rec_agent = [0, 0, 0, 0, 0, 0]
+
 
 def load_rapport_and_groups_dict():
     rapport_dict = {}
@@ -129,6 +167,21 @@ def one_hot_vectorize(cs):
     return vector
 
 
+def increment_agent_rec(cs, list):
+    if "NONE" in cs:
+        list[1] = list[1] + 1
+    elif "HE" in cs:
+        list[2] = list[2] + 1
+    elif "SD" in cs:
+        list[3] = list[3] + 1
+    elif "PR" in cs:
+        list[4] = list[4] + 1
+    elif "VSN" in cs:
+        list[5] = list[5] + 1
+    else:
+        list[0] = list[0] + 1
+    return list
+
 def count(cs, list):
     if "NONE" in cs:
         list[0] += 1
@@ -145,7 +198,7 @@ def count(cs, list):
 
 def get_data(dataset_name):
     dataset = pd.read_csv(config.TRAINING_DIALOGUE_PATH + dataset_name, index_col=False, header=None)
-    X = dataset.drop([0, 1, 2], axis=1)
+    X = dataset.drop([0, 1], axis=1)
     y = dataset[1]
     X_train, X_test, y_train, y_test = train_test_split(X, y)
     #std_scale = preprocessing.StandardScaler().fit(X)
@@ -165,11 +218,14 @@ def compute_reg_scores(regressors_list, X_train, X_test, y_train, y_test):
         #                    'learning_rate_init': [0.001, 0.01, 0.1, 0.2, 0.3],
         #                    'activation': ["logistic", "relu", "tanh"]}]
 
-        results = GridSearchCV(reg, param_grid=grid_values, cv=3, iid=False, scoring='neg_mean_squared_error')
-        results.fit(X, y)
+        results = GridSearchCV(reg, param_grid=grid_values, cv=10, iid=False, scoring='neg_mean_squared_error')
+        results.fit(X_train, y_train)
         # if name in 'MLP':
         # print(name + ": " + str(results.best_estimator_.hidden_layer_sizes))
-        print(name + ": " + str(results.best_score_))
+        y_pred = results.best_estimator_.predict(X_test)
+        print(name + ' Mean Absolute Error: ' + str(metrics.mean_absolute_error(y_test, y_pred)))
+        print(name + ' Mean Squared Error: ' + str(metrics.mean_squared_error(y_test, y_pred)))
+        print(name + ' Root Mean Squared Error: ' +  str(np.sqrt(metrics.mean_squared_error(y_test, y_pred))))
 
 def compute_clf_scores(classifiers_list, X_train, X_test, y_train, y_test):
     final_scores = {}
@@ -240,18 +296,18 @@ def get_clf_models():
 
 
 def cross_validate():
-    dataset_name = "count_dataset.csv"
+    dataset_name = "reciprocity_dataset.csv"
     X_train, X_test, y_train, y_test = get_data(dataset_name)
 
     clf_models = get_clf_models()
     reg_models = get_reg_models()
 
-    compute_clf_scores(clf_models, X_train, X_test, y_train, y_test)
-    #compute_reg_scores(reg_models, X_train, X_test, y_train, y_test)
+    #compute_clf_scores(clf_models, X_train, X_test, y_train, y_test)
+    compute_reg_scores(reg_models, X_train, X_test, y_train, y_test)
 
 
 
 
 if __name__ == '__main__':
-    build_count_dataset()
+    build_reciprocity_dataset()
     cross_validate()
