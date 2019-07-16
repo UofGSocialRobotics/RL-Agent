@@ -2,6 +2,7 @@ import itertools
 import os
 import csv
 
+from scipy import stats
 from sklearn.ensemble import RandomForestClassifier
 
 import numpy as np
@@ -11,6 +12,7 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.linear_model import LogisticRegression, LinearRegression, Ridge, Lasso
 from sklearn.model_selection import cross_val_score, GridSearchCV, train_test_split
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
@@ -88,9 +90,8 @@ def build_reciprocity_dataset():
     with open(config.TRAINING_DIALOGUE_PATH + "reciprocity_dataset.csv", mode='w', newline='') as csv_file:
         dataset = csv.writer(csv_file, delimiter=',')
         tmp_row = []
-        rec_agent = [0, 0, 0, 0, 0, 0]
+        rec_agent = [0, 0, 0, 0, 0]
         rec_user = [0, 0, 0, 0, 0]
-        agent_cs = [0, 0, 0, 0, 0]
         for root, dirs, files in os.walk(config.TRAINING_DIALOGUE_PATH):
             for name in files:
                 turn = 1
@@ -110,14 +111,15 @@ def build_reciprocity_dataset():
                             else:
                                 if "NONE" not in user_strat:
                                     rec_agent = increment_agent_rec(row[4], rec_agent)
-                            agent_cs = count(row[6], agent_cs)
+                            if "NONE" not in row[9]:
+                                rec_user = count(row[6], rec_user)
                             turn += 1
-                    tmp_row.extend(agent_cs)
+                    tmp_row.extend(rec_user)
                     tmp_row.extend(rec_agent)
                     dataset.writerow(tmp_row)
                     tmp_row = []
-                    agent_cs = [0, 0, 0, 0, 0]
-                    rec_agent = [0, 0, 0, 0, 0, 0]
+                    rec_user = [0, 0, 0, 0, 0]
+                    rec_agent = [0, 0, 0, 0, 0]
 
 
 def load_rapport_and_groups_dict():
@@ -170,14 +172,12 @@ def one_hot_vectorize(cs):
 def increment_agent_rec(cs, list):
     if "NONE" in cs:
         list[1] = list[1] + 1
-    elif "HE" in cs:
-        list[2] = list[2] + 1
     elif "SD" in cs:
-        list[3] = list[3] + 1
+        list[2] = list[2] + 1
     elif "PR" in cs:
-        list[4] = list[4] + 1
+        list[3] = list[3] + 1
     elif "VSN" in cs:
-        list[5] = list[5] + 1
+        list[4] = list[4] + 1
     else:
         list[0] = list[0] + 1
     return list
@@ -198,11 +198,11 @@ def count(cs, list):
 
 def get_data(dataset_name):
     dataset = pd.read_csv(config.TRAINING_DIALOGUE_PATH + dataset_name, index_col=False, header=None)
-    X = dataset.drop([0, 1], axis=1)
+    X = dataset.drop([0, 1, 2], axis=1)
+    X = MinMaxScaler().fit_transform(X)
     y = dataset[1]
     X_train, X_test, y_train, y_test = train_test_split(X, y)
-    #std_scale = preprocessing.StandardScaler().fit(X)
-    #df_std = std_scale.transform(X)
+
     return X_train, X_test, y_train, y_test
 
 def compute_reg_scores(regressors_list, X_train, X_test, y_train, y_test):
@@ -218,7 +218,7 @@ def compute_reg_scores(regressors_list, X_train, X_test, y_train, y_test):
         #                    'learning_rate_init': [0.001, 0.01, 0.1, 0.2, 0.3],
         #                    'activation': ["logistic", "relu", "tanh"]}]
 
-        results = GridSearchCV(reg, param_grid=grid_values, cv=10, iid=False, scoring='neg_mean_squared_error')
+        results = GridSearchCV(reg, param_grid=grid_values, cv=5, iid=False, scoring='neg_mean_squared_error')
         results.fit(X_train, y_train)
         # if name in 'MLP':
         # print(name + ": " + str(results.best_estimator_.hidden_layer_sizes))
@@ -226,6 +226,33 @@ def compute_reg_scores(regressors_list, X_train, X_test, y_train, y_test):
         print(name + ' Mean Absolute Error: ' + str(metrics.mean_absolute_error(y_test, y_pred)))
         print(name + ' Mean Squared Error: ' + str(metrics.mean_squared_error(y_test, y_pred)))
         print(name + ' Root Mean Squared Error: ' +  str(np.sqrt(metrics.mean_squared_error(y_test, y_pred))))
+        print(name + ' r2: ' + str(metrics.r2_score(y_test, y_pred)))
+
+        if name not in 'MLP':
+            params = np.append(results.best_estimator_.intercept_, results.best_estimator_.coef_)
+            newX = pd.DataFrame({"Constant": np.ones(len(X_test))}).join(pd.DataFrame(X_test))
+            MSE = (sum((y_test - y_pred) ** 2)) / (len(newX) - len(newX.columns))
+
+        # Note if you don't want to use a DataFrame replace the two lines above with
+        # newX = np.append(np.ones((len(X),1)), X, axis=1)
+        # MSE = (sum((y-predictions)**2))/(len(newX)-len(newX[0]))
+
+            var_b = MSE * (np.linalg.inv(np.dot(newX.T, newX)).diagonal())
+            sd_b = np.sqrt(var_b)
+            ts_b = params / sd_b
+
+            p_values = [2 * (1 - stats.t.cdf(np.abs(i), (len(newX) - 1))) for i in ts_b]
+
+            sd_b = np.round(sd_b, 3)
+            ts_b = np.round(ts_b, 3)
+            p_values = np.round(p_values, 3)
+            params = np.round(params, 4)
+
+            myDF3 = pd.DataFrame()
+            myDF3["Coefficients"], myDF3["Standard Errors"], myDF3["t values"], myDF3["Probabilites"] = [params, sd_b, ts_b,
+                                                                                                     p_values]
+            print(myDF3)
+
 
 def compute_clf_scores(classifiers_list, X_train, X_test, y_train, y_test):
     final_scores = {}
