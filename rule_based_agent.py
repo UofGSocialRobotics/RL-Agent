@@ -1,5 +1,4 @@
-import urllib.request
-import json
+import random
 import config
 import utils
 
@@ -66,20 +65,25 @@ class Agent():
         # Get a movie recommendation title
         if "inform(movie)" in next_state:
             self.movie['title'] = self.recommend()
-            self.set_movie_info(self.movie['title'])
+            movie_info = utils.get_movie_info(self.movie['title'])
+            self.movie['plot'] = movie_info.get("Plot")
+            self.movie['actors'] = movie_info.get("Actors")
+            self.movie['genres'] = movie_info.get("Genre")
 
         self.currState = next_state
-        new_msg = self.msg_to_json(next_state, self.movie)
+        agent_cs = self.pick_cs()
+        ack_cs = self.pick_cs()
+        new_msg = self.msg_to_json(next_state, self.movie, ack_cs, agent_cs)
         self.user_action = None
 
         return new_msg
 
-    def msg_to_json(self, intention, movie):
-        frame = {'intent': intention, 'movie': movie}
+    def msg_to_json(self, intention, movie, ack_cs, cs):
+        frame = {'intent': intention, 'movie': movie, 'ack_cs': ack_cs, 'cs': cs}
         return frame
 
     def recommend(self):
-        movies_list = self.queryMoviesList()
+        movies_list = utils.queryMoviesList(self.user_model)
         for movie in movies_list:
             if movie['title'] not in self.user_model['liked_movies'] and movie['title'] not in self.user_model['disliked_movies']:
                 if movie['poster_path']:
@@ -88,99 +92,10 @@ class Agent():
                     self.movie['poster'] = None
                 return movie['title']
 
-    def queryMoviesList(self):
-        movies_with_cast_list = []
-        movies_with_genres_list = []
-        if not self.user_model['liked_genres'] and not self.user_model['liked_cast']:
-            query_url = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + config.MOVIE_DB_PROPERTY
-            data = urllib.request.urlopen(query_url)
-            result = data.read()
-            movies = json.loads(result)
-            return movies['results']
-        if self.user_model['liked_genres']:
-            genre_id = self.get_genre_id(self.user_model['liked_genres'][-1].lower())
-            query_url = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_genres=" + str(
-                genre_id) + config.MOVIE_DB_PROPERTY
-            data = urllib.request.urlopen(query_url)
-            result = data.read()
-            movies = json.loads(result)
-            movies_with_genres_list = movies['results']
-        if self.user_model['liked_cast']:
-            cast_id = self.get_cast_id(self.user_model['liked_cast'][-1].lower())
-            query_url = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_people=" + str(
-                cast_id) + config.MOVIE_DB_PROPERTY
-            data = urllib.request.urlopen(query_url)
-            result = data.read()
-            movies = json.loads(result)
-            movies_with_cast_list = movies['results']
-        if movies_with_genres_list:
-            if movies_with_cast_list:
-                if len(movies_with_genres_list) > len(movies_with_cast_list):
-                    smallest_list = movies_with_cast_list
-                    biggest_list = movies_with_genres_list
-                else:
-                    smallest_list = movies_with_genres_list
-                    biggest_list = movies_with_cast_list
-                j = 0
-                movies_blended_list = []
-                for i in range(len(smallest_list)):
-                    movies_blended_list.append(smallest_list[i])
-                    movies_blended_list.append(biggest_list[i])
-                    j = i
-                for k in range(j, len(biggest_list)):
-                    movies_blended_list.append(biggest_list[k])
-                return movies_blended_list
-            else:
-                return movies_with_genres_list
-        else:
-            return movies_with_cast_list
 
-    def get_genre_id(self, genre_name):
-        return {
-            'action': 28,
-            'adventure': 12,
-            'animation': 16,
-            'comedy': 35,
-            'comedies': 35,
-            'crime': 80,
-            'documentary': 99,
-            'drama': 18,
-            'family': 10751,
-            'fantasy': 14,
-            'history': 36,
-            'horror': 27,
-            'music': 10402,
-            'romance': 10749,
-            'romantic': 10749,
-            'sci-fi': 878,
-            'scifi': 878,
-            'syfy': 878,
-            'thriller': 53,
-            'war': 10752,
-            'western': 37
-        }.get(genre_name, 0)
-
-    def get_cast_id(self, cast_name):
-        cast_name = cast_name.replace(" ", "%20")
-        query_url = config.MOVIEDB_SEARCH_PERSON_ADDRESS + config.MOVIEDB_KEY + "&query=" + cast_name
-        data = urllib.request.urlopen(query_url)
-        result = data.read()
-        movies = json.loads(result)
-        return int(movies['results'][0]['id'])
-
-    def set_movie_info(self, movie_name):
-        movie_name = movie_name.replace(" ", "%20")
-        movie_name = movie_name.replace("é", "e")
-        omdbURL = config.OMDB_SEARCH_MOVIE_INFO + movie_name + "&r=json" + "&apikey=" + config.OMDB_KEY
-        data = urllib.request.urlopen(omdbURL)
-        result = data.read()
-        movie_info = json.loads(result)
-        self.movie['plot'] = movie_info.get("Plot")
-        self.movie['actors'] = movie_info.get("Actors")
-        self.movie['genres'] = movie_info.get("Genre")
-
-    def select_cs(self):
-        return "SD"
+    def pick_cs(self):
+        agent_cs = random.choice(config.CS_LABELS)
+        return agent_cs
 
 # A node corresponds to a specific state of the dialogue. It contains:
 # - a state ID (int)

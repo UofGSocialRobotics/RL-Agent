@@ -2,6 +2,8 @@ import pyttsx3
 import random
 import win32com.client as wincl
 import config
+import urllib.request
+import json
 
 
 def set_voice_engine(who, voice):
@@ -69,6 +71,7 @@ def generate_agent_sentence(agent, agent_action, agent_prev_action, user_action)
     else:
         sentence = random.choice(agent.sentenceDB[agent_action['intent']])
     sentence_to_say = replace_in_agent_sentence(sentence, agent_action['movie'], user_action['entity'])
+    sentence_to_say = sentence_to_say.replace("–", "-")
     print("A: " + sentence_to_say)
     if config.GENERATE_VOICE:
         agent.engine.say(sentence_to_say)
@@ -166,3 +169,105 @@ def replace_in_agent_sentence(sentence, movie, entity):
     if "#entity" in sentence:
         sentence = sentence.replace("#entity", entity)
     return sentence
+
+
+#################################################################################################################
+#################################################################################################################
+##############                                                                                ###################
+##############                       Movie recommendation functions                           ###################
+##############                                                                                ###################
+#################################################################################################################
+#################################################################################################################
+
+def queryMoviesList(user_model):
+    movies_with_cast_list = []
+    movies_with_genres_list = []
+    if not user_model['liked_genres'] and not user_model['liked_cast']:
+        query_url = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + config.MOVIE_DB_PROPERTY
+        data = urllib.request.urlopen(query_url)
+        result = data.read()
+        movies = json.loads(result)
+        return movies['results']
+    if user_model['liked_genres']:
+        genre_id = get_genre_id(user_model['liked_genres'][-1].lower())
+        query_url = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_genres=" + str(
+            genre_id) + config.MOVIE_DB_PROPERTY
+        data = urllib.request.urlopen(query_url)
+        result = data.read()
+        movies = json.loads(result)
+        movies_with_genres_list = movies['results']
+    if user_model['liked_cast']:
+        cast_id = get_cast_id(user_model['liked_cast'][-1].lower())
+        query_url = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_people=" + str(
+            cast_id) + config.MOVIE_DB_PROPERTY
+        data = urllib.request.urlopen(query_url)
+        result = data.read()
+        movies = json.loads(result)
+        movies_with_cast_list = movies['results']
+    if movies_with_genres_list:
+        if movies_with_cast_list:
+            if len(movies_with_genres_list) > len(movies_with_cast_list):
+                smallest_list = movies_with_cast_list
+                biggest_list = movies_with_genres_list
+            else:
+                smallest_list = movies_with_genres_list
+                biggest_list = movies_with_cast_list
+            j = 0
+            movies_blended_list = []
+            for i in range(len(smallest_list)):
+                movies_blended_list.append(smallest_list[i])
+                movies_blended_list.append(biggest_list[i])
+                j = i
+            for k in range(j, len(biggest_list)):
+                movies_blended_list.append(biggest_list[k])
+            return movies_blended_list
+        else:
+            return movies_with_genres_list
+    else:
+        return movies_with_cast_list
+
+
+def get_genre_id(genre_name):
+    return {
+        'action': 28,
+        'adventure': 12,
+        'animation': 16,
+        'comedy': 35,
+        'comedies': 35,
+        'crime': 80,
+        'documentary': 99,
+        'drama': 18,
+        'family': 10751,
+        'fantasy': 14,
+        'history': 36,
+        'horror': 27,
+        'music': 10402,
+        'romance': 10749,
+        'romantic': 10749,
+        'sci-fi': 878,
+        'scifi': 878,
+        'syfy': 878,
+        'thriller': 53,
+        'war': 10752,
+        'western': 37
+    }.get(genre_name, 0)
+
+
+def get_cast_id(cast_name):
+    cast_name = cast_name.replace(" ", "%20")
+    query_url = config.MOVIEDB_SEARCH_PERSON_ADDRESS + config.MOVIEDB_KEY + "&query=" + cast_name
+    data = urllib.request.urlopen(query_url)
+    result = data.read()
+    movies = json.loads(result)
+    return int(movies['results'][0]['id'])
+
+
+def get_movie_info(movie_name):
+    movie_name = movie_name.replace(" ", "%20")
+    movie_name = movie_name.replace("é", "e")
+    omdbURL = config.OMDB_SEARCH_MOVIE_INFO + movie_name + "&r=json" + "&apikey=" + config.OMDB_KEY
+    data = urllib.request.urlopen(omdbURL)
+    result = data.read()
+    movie_info = json.loads(result)
+    return movie_info
+

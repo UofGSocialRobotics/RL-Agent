@@ -1,6 +1,7 @@
-import itertools
 import os
 import csv
+import pickle
+from numpy import array
 
 from scipy import stats
 from sklearn.ensemble import RandomForestClassifier
@@ -171,15 +172,15 @@ def one_hot_vectorize(cs):
 
 def increment_agent_rec(cs, list):
     if "NONE" in cs:
-        list[1] = list[1] + 1
+        list[1] += 1
     elif "SD" in cs:
-        list[2] = list[2] + 1
+        list[2] += 1
     elif "PR" in cs:
-        list[3] = list[3] + 1
+        list[3] += 1
     elif "VSN" in cs:
-        list[4] = list[4] + 1
+        list[4] += 1
     else:
-        list[0] = list[0] + 1
+        list[0] += 1
     return list
 
 def count(cs, list):
@@ -195,6 +196,11 @@ def count(cs, list):
         list[4] += 1
     return list
 
+def scale_data(data):
+    data = array([data])
+    data = MinMaxScaler().fit_transform(data.T)
+    X = pd.DataFrame(data, columns = None)
+    return X.T
 
 def get_data(dataset_name):
     dataset = pd.read_csv(config.TRAINING_DIALOGUE_PATH + dataset_name, index_col=False, header=None)
@@ -252,6 +258,20 @@ def compute_reg_scores(regressors_list, X_train, X_test, y_train, y_test):
             myDF3["Coefficients"], myDF3["Standard Errors"], myDF3["t values"], myDF3["Probabilites"] = [params, sd_b, ts_b,
                                                                                                      p_values]
             print(myDF3)
+
+        if "Rid" in name:
+            filename = config.RAPPORT_ESTIMATOR_MODEL
+            filename2 = config.RAPPORT_ESTIMATOR_TEST_MODEL
+            #pickle.dump(results.best_estimator_, open(filename, 'wb'))
+
+
+            loaded_model = pickle.load(open(filename, 'rb'))
+            result = loaded_model.score(X_test, y_test)
+            print("pickle prediction: " + str(result))
+            loaded_model = pickle.load(open(filename2, 'rb'))
+            result = loaded_model.score(X_test, y_test)
+            print("pickle prediction 2: " + str(result))
+
 
 
 def compute_clf_scores(classifiers_list, X_train, X_test, y_train, y_test):
@@ -333,7 +353,20 @@ def cross_validate():
     compute_reg_scores(reg_models, X_train, X_test, y_train, y_test)
 
 
+def append_data_from_simulation(user_action, agent_action, agent_previous_action, rec_user, rec_agent):
+    if "NONE" not in user_action['cs']:
+        increment_agent_rec(agent_action['ack_cs'], rec_agent)
+    if "start" not in agent_previous_action['intent']:
+        if "NONE" not in agent_previous_action['cs']:
+            count(user_action['cs'], rec_user)
+    return rec_user, rec_agent
 
+def estimate_rapport(data):
+    filename = config.RAPPORT_ESTIMATOR_MODEL
+    loaded_model = pickle.load(open(filename, 'rb'))
+    data = scale_data(data)
+    result = loaded_model.predict(data)
+    return result
 
 if __name__ == '__main__':
     build_reciprocity_dataset()

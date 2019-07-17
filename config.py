@@ -41,3 +41,5 @@ GENERATE_SENTENCE = True
 GENERATE_VOICE = False
 
 TRAINING_DIALOGUE_PATH = "./resources/training_dialogues/"
+RAPPORT_ESTIMATOR_MODEL = "./resources/rapport_estimator_model.pkl"
+RAPPORT_ESTIMATOR_TEST_MODEL = "./resources/rapport_estimator_model_test.pkl"
