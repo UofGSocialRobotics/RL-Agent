@@ -1,3 +1,5 @@
+from itertools import zip_longest
+
 import pyttsx3
 import random
 import win32com.client as wincl
@@ -179,52 +181,81 @@ def replace_in_agent_sentence(sentence, movie, entity):
 #################################################################################################################
 #################################################################################################################
 
-def queryMoviesList(user_model):
-    movies_with_cast_list = []
-    movies_with_genres_list = []
-    if not user_model['liked_genres'] and not user_model['liked_cast']:
-        query_url = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + config.MOVIE_DB_PROPERTY
-        data = urllib.request.urlopen(query_url)
-        result = data.read()
-        movies = json.loads(result)
-        return movies['results']
+def query_blended_movies_list(user_model):
+    final_list = []
     if user_model['liked_genres']:
         genre_id = get_genre_id(user_model['liked_genres'][-1].lower())
-        query_url = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_genres=" + str(
-            genre_id) + config.MOVIE_DB_PROPERTY
-        data = urllib.request.urlopen(query_url)
-        result = data.read()
-        movies = json.loads(result)
-        movies_with_genres_list = movies['results']
     if user_model['liked_cast']:
-        cast_id = get_cast_id(user_model['liked_cast'][-1].lower())
-        query_url = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_people=" + str(
+        cast_id = get_person_id(user_model['liked_cast'][-1].lower())
+    if user_model['liked_crew']:
+        crew_id = get_person_id(user_model['liked_crew'][-1].lower())
+
+    if user_model['liked_genres'] and user_model['liked_cast'] and user_model['liked_crew']:
+        query1 = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_cast=" + str(cast_id) + "&with_crew=" + str(crew_id) + config.MOVIE_DB_PROPERTY
+        query2 = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_genres=" + str(genre_id) + "&with_people=" + str(cast_id) + "," + str(crew_id) + config.MOVIE_DB_PROPERTY
+        query3 = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_genres=" + str(genre_id) + config.MOVIE_DB_PROPERTY
+        query4 = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_people=" + str(cast_id) + "," + str(crew_id) + config.MOVIE_DB_PROPERTY
+        list1 = get_movie_list(query1)
+        list2 = get_movie_list(query2)
+        list3 = get_movie_list(query3)
+        list4 = get_movie_list(query4)
+        for list in [list1,list2, list3, list4]:
+            if not list:
+                list = None
+        final_list = [y for x in zip_longest(list1, list2, list3, list4, fillvalue=None) for y in x if y is not None]
+    elif user_model['liked_cast'] and user_model['liked_crew']:
+        query1 = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_cast=" + str(
+            cast_id) + "&with_crew=" + str(crew_id) + config.MOVIE_DB_PROPERTY
+        query2 = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_people=" + str(
+            cast_id) + "," + str(crew_id) + config.MOVIE_DB_PROPERTY
+        list1 = get_movie_list(query1)
+        list2 = get_movie_list(query2)
+        final_list = [y for x in zip_longest(list1, list2, fillvalue=None) for y in x if y is not None]
+    elif user_model['liked_cast'] and user_model['liked_genres']:
+        query1 = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_genres=" + str(
+            genre_id) + "&with_cast=" + str(cast_id) + config.MOVIE_DB_PROPERTY
+        query2 = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_genres=" + str(
+            genre_id) + config.MOVIE_DB_PROPERTY
+        query3 = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_cast=" + str(
             cast_id) + config.MOVIE_DB_PROPERTY
-        data = urllib.request.urlopen(query_url)
-        result = data.read()
-        movies = json.loads(result)
-        movies_with_cast_list = movies['results']
-    if movies_with_genres_list:
-        if movies_with_cast_list:
-            if len(movies_with_genres_list) > len(movies_with_cast_list):
-                smallest_list = movies_with_cast_list
-                biggest_list = movies_with_genres_list
-            else:
-                smallest_list = movies_with_genres_list
-                biggest_list = movies_with_cast_list
-            j = 0
-            movies_blended_list = []
-            for i in range(len(smallest_list)):
-                movies_blended_list.append(smallest_list[i])
-                movies_blended_list.append(biggest_list[i])
-                j = i
-            for k in range(j, len(biggest_list)):
-                movies_blended_list.append(biggest_list[k])
-            return movies_blended_list
-        else:
-            return movies_with_genres_list
-    else:
-        return movies_with_cast_list
+        final_list = get_movie_list(query1)
+        list2 = get_movie_list(query2)
+        list3 = get_movie_list(query3)
+        final_list.extend([y for x in zip_longest(list2, list3, fillvalue=None) for y in x if y is not None])
+    elif user_model['liked_genres'] and user_model['liked_crew']:
+        query1 = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_genres=" + str(
+            genre_id) + "&with_crew=" + str(crew_id) + config.MOVIE_DB_PROPERTY
+        query2 = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_genres=" + str(
+            genre_id) + config.MOVIE_DB_PROPERTY
+        query3 = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_crew=" + str(
+            crew_id) + config.MOVIE_DB_PROPERTY
+        final_list = get_movie_list(query1)
+        list2 = get_movie_list(query2)
+        list3 = get_movie_list(query3)
+        final_list.extend([y for x in zip_longest(list2, list3, fillvalue=None) for y in x if y is not None])
+    elif user_model['liked_cast']:
+        query = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_cast=" + str(
+            cast_id) + config.MOVIE_DB_PROPERTY
+        final_list = get_movie_list(query)
+    elif user_model['liked_crew']:
+        query = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_crew=" + str(
+            crew_id) + config.MOVIE_DB_PROPERTY
+        final_list = get_movie_list(query)
+    elif user_model['liked_genres']:
+        query = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + "&with_genres=" + str(
+            genre_id) + config.MOVIE_DB_PROPERTY
+        final_list = get_movie_list(query)
+
+    query_url = config.MOVIEDB_SEARCH_MOVIE_ADDRESS + config.MOVIEDB_KEY + config.MOVIE_DB_PROPERTY
+    final_list.extend(get_movie_list(query_url))
+    return final_list
+
+
+def get_movie_list(query):
+    data = urllib.request.urlopen(query)
+    result = data.read()
+    movies = json.loads(result)
+    return movies['results']
 
 
 def get_genre_id(genre_name):
@@ -253,7 +284,7 @@ def get_genre_id(genre_name):
     }.get(genre_name, 0)
 
 
-def get_cast_id(cast_name):
+def get_person_id(cast_name):
     cast_name = cast_name.replace(" ", "%20")
     query_url = config.MOVIEDB_SEARCH_PERSON_ADDRESS + config.MOVIEDB_KEY + "&query=" + cast_name
     data = urllib.request.urlopen(query_url)

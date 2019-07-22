@@ -13,6 +13,8 @@ class UserSimulator():
 
         # User type (P-Type or I-Type)
         self.user_type = ""
+        # User type (Nov-type or Sim-Type)
+        self.user_reco_pref = ""
 
         # Number of recommendations wanted by the user (from 1 to 6 included)
         self.number_recos = 0
@@ -44,6 +46,7 @@ class UserSimulator():
         # The prior probabilities for a user being I-Type
         # or P-Type were learned from the Davos data using MLE.
         self.user_type = numpy.random.choice(config.ITEMS_USER_TYPE, p=config.PROBA_USER_TYPE)
+        self.user_reco_pref = numpy.random.choice(config.ITEMS_USER_RECO_PREF, p=config.PROBA_USER_RECO_PREF)
 
     def set_preferences(self):
         list_actors = []
@@ -125,7 +128,7 @@ class UserSimulator():
                         self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
                         user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                     else:
-                        self.movie_agenda = ['yes', 'no', 'request(more)']
+                        self.movie_agenda = ['yes', 'no', 'request(another)']
                         self.movie_agenda_probas = [0.33, 0.33, 0.34]
                         user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                 elif "(actor)" in agent_action['intent']:
@@ -136,7 +139,7 @@ class UserSimulator():
                         self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
                         user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                     else:
-                        self.movie_agenda = ['yes', 'no', 'request(more)']
+                        self.movie_agenda = ['yes', 'no', 'request(another)']
                         self.movie_agenda_probas = [0.33, 0.33, 0.34]
                         user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                 elif "(plot)" in agent_action['intent']:
@@ -147,7 +150,7 @@ class UserSimulator():
                         self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
                         user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                     else:
-                        self.movie_agenda = ['yes', 'no', 'request(more)']
+                        self.movie_agenda = ['yes', 'no', 'request(another)']
                         self.movie_agenda_probas = [0.33, 0.33, 0.34]
                         user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
             else:

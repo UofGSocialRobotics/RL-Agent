@@ -21,6 +21,15 @@ from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 from sklearn import metrics
 
 
+
+#################################################################################################################
+#################################################################################################################
+##############                                                                                ###################
+##############                          Off Line Training Functions                           ###################
+##############                                                                                ###################
+#################################################################################################################
+#################################################################################################################
+
 def build_raw_dataset():
     rapport_dict, groups_dict = load_rapport_and_groups_dict()
     with open(config.TRAINING_DIALOGUE_PATH + "raw_dataset.csv", mode='w', newline='') as csv_file:
@@ -353,13 +362,27 @@ def cross_validate():
     compute_reg_scores(reg_models, X_train, X_test, y_train, y_test)
 
 
-def append_data_from_simulation(user_action, agent_action, agent_previous_action, rec_user, rec_agent):
-    if "NONE" not in user_action['cs']:
-        increment_agent_rec(agent_action['ack_cs'], rec_agent)
-    if "start" not in agent_previous_action['intent']:
-        if "NONE" not in agent_previous_action['cs']:
-            count(user_action['cs'], rec_user)
-    return rec_user, rec_agent
+
+
+#################################################################################################################
+#################################################################################################################
+##############                                                                                ###################
+##############                          OnLine Estimation Functions                           ###################
+##############                                                                                ###################
+#################################################################################################################
+#################################################################################################################
+
+def append_data_from_simulation(user_action, agent_action, agent_previous_action, rec_I_user, rec_I_agent, rec_P_agent, user_type):
+    if "P" in user_type:
+        if "NONE" in user_action['cs'] and "NONE" in agent_action['cs']:
+            rec_P_agent += 1
+    else:
+        if "NONE" not in user_action['cs']:
+            increment_agent_rec(agent_action['ack_cs'], rec_I_agent)
+        if "start" not in agent_previous_action['intent']:
+            if "NONE" not in agent_previous_action['cs']:
+                count(user_action['cs'], rec_I_user)
+    return rec_I_user, rec_I_agent, rec_P_agent
 
 def estimate_rapport(data):
     filename = config.RAPPORT_ESTIMATOR_MODEL
@@ -367,6 +390,26 @@ def estimate_rapport(data):
     data = scale_data(data)
     result = loaded_model.predict(data)
     return result
+
+def get_rapport_reward(rapport_score, none_ratio, user_type):
+    reward = 0
+    print("None_ratio: " + str(none_ratio))
+    if "P" in user_type:
+        if none_ratio >= .75:
+            reward = 20
+        if none_ratio >= .50:
+            reward = 10
+        elif none_ratio >= .25:
+            reward = 5
+    if rapport_score > 6:
+        reward = 50
+    elif rapport_score > 5:
+        reward = 25
+    elif rapport_score > 4:
+        reward = 10
+    return reward
+
+
 
 if __name__ == '__main__':
     build_reciprocity_dataset()

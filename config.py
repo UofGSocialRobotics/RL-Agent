@@ -20,6 +20,8 @@ PROBA_REQUEST_AFTER_MOVIE = [0.15, 0.1, 0.1, 0.1, 0.2, 0.2, 0.15]
 PROBA_NUMBER_MOVIES = [0.2, 0.2, 0.15, 0.15, 0.15, 0.15]
 ITEMS_USER_TYPE = ["P", "I"]
 PROBA_USER_TYPE = [0.641, 0.359]
+ITEMS_USER_RECO_PREF = ["Nov", "Sim"]
+PROBA_USER_RECO_PREF = [0.641, 0.359]
 
 # Agent related
 AGENT_SENTENCES = "./resources/agent/agent_sentence_DB.csv"

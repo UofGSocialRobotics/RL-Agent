@@ -1,9 +1,8 @@
 import random
 import config
 import utils
+import pandas
 
-
-# Todo Add CS
 
 class Agent():
     def __init__(self):
@@ -18,9 +17,11 @@ class Agent():
         self.currState = "start"
         # Do we store the users preferences in a user model?
         self.store_pref = True
-        self.movies_list = []
+
+        self.cs_qtable = pandas.DataFrame(0, index=config.CS_LABELS, columns=config.CS_LABELS)
 
         self.user_action = None
+        self.movies_list = []
 
         self.movie = {'title': "", 'year': "", 'plot': "", 'actors': [], 'genres': [], 'poster': ""}
         self.nodes = {}
@@ -86,11 +87,10 @@ class Agent():
     def recommend(self):
         if not self.movies_list:
             self.movies_list = utils.query_blended_movies_list(self.user_model)
-        print(self.movies_list)
         for movie in self.movies_list:
-            if movie['title'] not in self.user_model['liked_movies'] and movie['title'] not in self.user_model['disliked_movies']:
+            if movie['title'] not in self.user_model['liked_movies'] and movie['title'] not in self.user_model[
+                'disliked_movies']:
                 return movie['title']
-
 
     def pick_cs(self):
         agent_cs = random.choice(config.CS_LABELS)
