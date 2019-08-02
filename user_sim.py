@@ -97,7 +97,7 @@ class UserSimulator():
                     if self.pref_director:
                         user_intention = 'inform(director)'
                         user_entity = self.pref_director
-                        entity_type = 'cast'
+                        entity_type = 'crew'
                         polarity = "+"
                     else:
                         user_intention = 'no'

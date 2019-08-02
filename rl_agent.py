@@ -19,64 +19,35 @@ class Agent():
         self.store_pref = True
 
         self.cs_qtable = pandas.DataFrame(0, index=config.CS_LABELS, columns=config.CS_LABELS)
+        print(self.cs_qtable)
 
         self.user_action = None
         self.movies_list = []
 
         self.movie = {'title': "", 'year': "", 'plot': "", 'actors': [], 'genres': [], 'poster': ""}
-        self.nodes = {}
+        self.actions = []
         self.user_model = {"liked_cast": [], "disliked_cast": [], 'liked_crew': [], 'disliked_crew': [],
                            "liked_genres": [], 'disliked_genres': [], 'liked_movies': [], 'disliked_movies': []}
-        self.load_model(config.DM_MODEL)
+        self.load_actions(config.AGENT_ACTIONS)
 
     # Parse the model.csv file and transform that into a dict of Nodes representing the scenario
-    def load_model(self, path):
+    def load_actions(self, path):
         with open(path) as f:
             for line in f:
-                line_input = line.replace('\n', '')
-                line_input = line_input.split(",")
-                node = DMNode(line_input[0], line_input[1], line_input[2])
-                for i in range(3, len(line_input)):
-                    if "-" in line_input[i]:
-                        node.add(line_input[i])
-                self.nodes[node.stateName] = node
+                if "#" not in line:
+                    self.actions.append(line.replace("\n",""))
 
-    def next(self, msg):
-        self.user_action = msg
-        # Store entities (actors,directors, genres) in the user frame
-        if self.store_pref and "inform" in self.user_action['intent']:
-            if '+' in self.user_action['polarity']:
-                if 'cast' in self.user_action['entity_type']:
-                    self.user_model["liked_cast"].append(self.user_action['entity'])
-                elif 'genre' in self.user_action['entity_type']:
-                    self.user_model["liked_genres"].append(self.user_action['entity'])
-            elif '-' in self.user_action['polarity']:
-                if 'cast' in self.user_action['entity_type']:
-                    self.user_model["disliked_cast"].append(self.user_action['entity'])
-                elif 'genre' in self.user_action['entity_type']:
-                    self.user_model["disliked_genre"].append(self.user_action['entity'])
+    def next(self, state):
+        if state["turns"] == 0:
+            next_state = "greeting"
+        else:
+            next_state = random.choice(self.actions)
 
-        next_state = self.nodes.get(self.currState).get_action(self.user_action['intent'])
-
-        if self.currState in ("inform(movie)", "inform(plot)", "inform(actor)", "inform(genre)"):
-            if "yes" in self.user_action['intent']:
-                self.user_model['liked_movies'].append(self.movie['title'])
-            elif any(s in self.user_action['intent'] for s in ('request(more)', 'inform(watched)', 'no')):
-                self.user_model['disliked_movies'].append(self.movie['title'])
-
-        # Get a movie recommendation title
-        if "inform(movie)" in next_state:
-            self.movie['title'] = self.recommend()
-            movie_info = utils.get_movie_info(self.movie['title'])
-            self.movie['plot'] = movie_info.get("Plot")
-            self.movie['actors'] = movie_info.get("Actors")
-            self.movie['genres'] = movie_info.get("Genre")
-
-        self.currState = next_state
+        self.actions.remove(next_state)
+        #print(str(len(self.actions)) + "     " + str(self.actions))
         agent_cs = self.pick_cs()
         ack_cs = self.pick_cs()
         new_msg = self.msg_to_json(next_state, self.movie, ack_cs, agent_cs)
-        self.user_action = None
 
         return new_msg
 
@@ -95,29 +66,3 @@ class Agent():
     def pick_cs(self):
         agent_cs = random.choice(config.CS_LABELS)
         return agent_cs
-
-# A node corresponds to a specific state of the dialogue. It contains:
-# - a state ID (int)
-# - a state name (String)
-# - a default state (String) which represents the next state by default, whatever the user says.
-# - a set of rules (dict) mapping a specific user intent to another state (e.g. yes-inform() means that if the user says
-#   yes, the next state will be inform())
-class DMNode:
-    def __init__(self, state_name, state_default, state_ack):
-        self.stateName = state_name
-        self.stateDefault = state_default
-        if state_ack.lower() == "true":
-            self.stateAck = True
-        else:
-            self.stateAck = False
-        self.rules = {}
-
-    def add(self, string):
-        intents = string.split("-")
-        self.rules[intents[0]] = intents[1]
-
-    def get_action(self, user_intent):
-        if user_intent in self.rules:
-            return self.rules.get(user_intent)
-        else:
-            return self.stateDefault
