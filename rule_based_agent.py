@@ -3,8 +3,6 @@ import config
 import utils
 
 
-# Todo Add CS
-
 class Agent():
     def __init__(self):
 
@@ -86,7 +84,6 @@ class Agent():
     def recommend(self):
         if not self.movies_list:
             self.movies_list = utils.query_blended_movies_list(self.user_model)
-        print(self.movies_list)
         for movie in self.movies_list:
             if movie['title'] not in self.user_model['liked_movies'] and movie['title'] not in self.user_model['disliked_movies']:
                 return movie['title']

@@ -26,8 +26,7 @@ class Agent():
 
         self.movie = {'title': "", 'year': "", 'plot': "", 'actors': [], 'genres': [], 'poster': ""}
         self.actions = []
-        self.user_model = {"liked_cast": [], "disliked_cast": [], 'liked_crew': [], 'disliked_crew': [],
-                           "liked_genres": [], 'disliked_genres': [], 'liked_movies': [], 'disliked_movies': []}
+
         self.load_actions(config.AGENT_ACTIONS)
 
     # Parse the model.csv file and transform that into a dict of Nodes representing the scenario
