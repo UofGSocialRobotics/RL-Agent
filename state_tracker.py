@@ -32,8 +32,10 @@ class DialogState():
         self.turns += 1.0
         if "inform" in user_action['intent'] and user_action['entity_type'] not in self.state["slots_requested"]:
             self.state["slots_requested"].append(user_action['entity_type'])
-        #if user_action['cs']:
-        #    self.state["user_current_cs"] = user_action['cs']
+        if "inform(movie)" in agent_action['intent'] and "yes" in user_action['intent']:
+            self.state['recos'] += 1
+        if user_action['cs']:
+            self.state["user_current_cs"] = user_action['cs']
         self.state["user_action"] = user_action['intent']
         self.state["agent_previous_action"] = agent_action['intent']
         if "bye" in agent_action['intent']:
@@ -62,6 +64,12 @@ class DialogState():
                     self.reward += -30.0
                 else:
                     self.reward += 30.0
+        return self.reward
+
+    def compute_reward(self):
+        self.reward += -1
+        if self.dialog_done:
+            self.reward = self.state['recos'] * 50
         return self.reward
 
 

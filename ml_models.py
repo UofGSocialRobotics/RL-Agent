@@ -21,11 +21,34 @@ from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 from sklearn import metrics
 
 
+def build_task_model():
+    dataset = config.RECO_ACCEPTANCE_DATASET
+    cross_validate(dataset)
+
+def get_task_data(dataset_name):
+    dataset = pd.read_csv(dataset_name, index_col=False, header=None)
+    X = dataset.drop([4], axis=1)
+    X = MinMaxScaler().fit_transform(X)
+    y = dataset[4]
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+
+    return X_train, X_test, y_train, y_test
+
+def cross_validate(dataset):
+    #X_train, X_test, y_train, y_test = get_data(dataset)
+    X_train, X_test, y_train, y_test = get_task_data(dataset)
+
+    clf_models = get_clf_models()
+    reg_models = get_reg_models()
+
+    compute_clf_scores(clf_models, X_train, X_test, y_train, y_test)
+    #compute_reg_scores(reg_models, X_train, X_test, y_train, y_test)
+
 
 #################################################################################################################
 #################################################################################################################
 ##############                                                                                ###################
-##############                          Off Line Training Functions                           ###################
+##############                  Off Line Rapport Estimator Training Functions                 ###################
 ##############                                                                                ###################
 #################################################################################################################
 #################################################################################################################
@@ -323,6 +346,15 @@ def compute_clf_scores(classifiers_list, X_train, X_test, y_train, y_test):
         precision, recall, fscore, support = precision_recall_fscore_support(y_test, y_pred)
         final_scores[name] = [str(results.best_score_), confusion_matrix(y_test, y_pred), precision, recall, fscore, support]
 
+        if "MLP" in name:
+            filename = config.RECO_ACCEPTANCE_MODEL
+            pickle.dump(results.best_estimator_, open(filename, 'wb'))
+
+            print("Je vais faire un clacul!!!!")
+            loaded_model = pickle.load(open(filename, 'rb'))
+            result = loaded_model.score(X_test, y_test)
+            print("pickle prediction: " + str(result))
+
         # print('Best C:', results.best_estimator_.C)
     for key, score in final_scores.items():
         print(key + " - F1 score train: " + str(score[0]))
@@ -351,23 +383,16 @@ def get_clf_models():
     return clf_dict
 
 
-def cross_validate():
+def rapport_estimator_validate():
     dataset_name = "reciprocity_dataset.csv"
-    X_train, X_test, y_train, y_test = get_data(dataset_name)
-
-    clf_models = get_clf_models()
-    reg_models = get_reg_models()
-
-    #compute_clf_scores(clf_models, X_train, X_test, y_train, y_test)
-    compute_reg_scores(reg_models, X_train, X_test, y_train, y_test)
-
+    cross_validate(dataset_name)
 
 
 
 #################################################################################################################
 #################################################################################################################
 ##############                                                                                ###################
-##############                          OnLine Estimation Functions                           ###################
+##############                          OnLine Rapport Estimation Functions                   ###################
 ##############                                                                                ###################
 #################################################################################################################
 #################################################################################################################
@@ -412,5 +437,6 @@ def get_rapport_reward(rapport_score, none_ratio, user_type):
 
 
 if __name__ == '__main__':
-    build_reciprocity_dataset()
-    cross_validate()
+    #build_reciprocity_dataset()
+    #cross_validate()
+    build_task_model()

@@ -6,7 +6,7 @@ import pandas
 class Agent():
     def __init__(self):
 
-        self.actions = ["greeting", "request(last_movie)", "request(genre)", "inform(movie)", "goodbye"]
+        self.actions = ["greeting", "request(last_movie)", "request(actor)", "request(director)", "request(genre)", "inform(movie)", "goodbye"]
         self.cs_qtable = pandas.DataFrame(0, index=[], columns=self.actions)
 
         self.epsilon = 1.0  # Greed 100%

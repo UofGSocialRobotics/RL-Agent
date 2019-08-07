@@ -42,7 +42,10 @@ OMDB_KEY = "be72fd68"
 
 GENERATE_SENTENCE = True
 GENERATE_VOICE = False
+INTERACTION_MODE = "RL"
 
 TRAINING_DIALOGUE_PATH = "./resources/training_dialogues/"
 RAPPORT_ESTIMATOR_MODEL = "./resources/rapport_estimator_model.pkl"
 RAPPORT_ESTIMATOR_TEST_MODEL = "./resources/rapport_estimator_model_test.pkl"
+RECO_ACCEPTANCE_MODEL = "./resources/reco_acceptance_model.pkl"
+RECO_ACCEPTANCE_DATASET = "./resources/user/fake_task_data.csv"

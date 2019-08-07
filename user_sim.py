@@ -1,5 +1,9 @@
 import random
 import numpy
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+
 import config
 import utils
 
@@ -75,7 +79,7 @@ class UserSimulator():
                 line_input = line.replace('\n', '')
                 self.list_actions.append(line_input)
 
-    def next(self, agent_action):
+    def next(self, agent_action, state):
         user_entity = ''
         entity_type = ''
         polarity = ''
@@ -116,53 +120,7 @@ class UserSimulator():
             # Todo Do something better here
             # Todo Check when to reinit the movie_agenda
             elif "inform" in agent_action['intent']:
-                if "(movie)" in agent_action['intent']:
-                    self.movie_agenda = list(config.ITEMS_REQUEST_AFTER_MOVIE)
-                    self.movie_agenda_probas = list(config.PROBA_REQUEST_AFTER_MOVIE)
-                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
-                    self.current_number_recos += 1
-                elif "(genre)" in agent_action['intent']:
-                    if 'request(actor)' and 'request(plot)' in self.movie_agenda:
-                        self.movie_agenda.remove('request(genre)')
-                        self.movie_agenda_probas = [0.2, 0.15, 0.1, 0.2, 0.2, 0.15]
-                        if 'inform(watched)' in self.movie_agenda:
-                            self.movie_agenda.remove('inform(watched)')
-                            self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
-                        print(self.movie_agenda)
-                        print(self.movie_agenda_probas)
-                        user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
-                    else:
-                        self.movie_agenda = ['yes', 'no', 'request(another)']
-                        self.movie_agenda_probas = [0.33, 0.33, 0.34]
-                        user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
-                elif "(actor)" in agent_action['intent']:
-                    if 'request(genre)' and 'request(plot)' in self.movie_agenda:
-                        self.movie_agenda.remove('request(actor)')
-                        self.movie_agenda_probas = [0.2, 0.15, 0.1, 0.2, 0.2, 0.15]
-                        if 'inform(watched)' in self.movie_agenda:
-                            self.movie_agenda.remove('inform(watched)')
-                            self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
-                        print(self.movie_agenda)
-                        print(self.movie_agenda_probas)
-                        user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
-                    else:
-                        self.movie_agenda = ['yes', 'no', 'request(another)']
-                        self.movie_agenda_probas = [0.33, 0.33, 0.34]
-                        user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
-                elif "(plot)" in agent_action['intent']:
-                    if 'request(actor)' and 'request(genre)' in self.movie_agenda:
-                        self.movie_agenda.remove('request(plot)')
-                        self.movie_agenda_probas = [0.2, 0.15, 0.1, 0.15, 0.25, 0.15]
-                        if 'inform(watched)' in self.movie_agenda:
-                            self.movie_agenda.remove('inform(watched)')
-                            self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
-                        print(self.movie_agenda)
-                        print(self.movie_agenda_probas)
-                        user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
-                    else:
-                        self.movie_agenda = ['yes', 'no', 'request(another)']
-                        self.movie_agenda_probas = [0.33, 0.33, 0.34]
-                        user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                user_intention = self.response_to_inform_movie(agent_action, config.INTERACTION_MODE, state)
             else:
                 user_intention = "yes"
         else:
@@ -185,6 +143,141 @@ class UserSimulator():
         else:
             user_cs = random.choice(config.CS_LABELS)
         return user_cs
+
+    def response_to_inform_movie(self, agent_action, mode, state):
+        if "RL" in mode:
+            if "Nov" in state["user_reco_type"]:
+                if "genre" in state["slots_requested"] and "actor" in state["slots_requested"] and "director" in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.2, 0.8]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+                elif "genre" in state["slots_requested"] and "actor" in state["slots_requested"] and "director" not in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.25, 0.75]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+                elif "genre" in state["slots_requested"] and "actor" not in state["slots_requested"] and "director" in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.25, 0.75]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+                elif "genre" not in state["slots_requested"] and "actor" in state["slots_requested"] and "director" in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.25, 0.75]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+                elif "genre" in state["slots_requested"] and "actor" not in state["slots_requested"] and "director" not in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.7, 0.3]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+                elif "genre" not in state["slots_requested"] and "actor" in state["slots_requested"] and "director" not in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.4, 0.6]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+                elif "genre" not in state["slots_requested"] and "actor" not in state["slots_requested"] and "director" in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.4, 0.6]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+                elif "genre" not in state["slots_requested"] and "actor" not in state["slots_requested"] and "director" not in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.85, 0.15]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+            else:
+                if "genre" in state["slots_requested"] and "actor" in state["slots_requested"] and "director" in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.8, 0.2]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+                elif "genre" in state["slots_requested"] and "actor" in state["slots_requested"] and "director" not in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.75, 0.25]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+                elif "genre" in state["slots_requested"] and "actor" not in state["slots_requested"] and "director" in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.75, 0.25]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+                elif "genre" not in state["slots_requested"] and "actor" in state["slots_requested"] and "director" in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.75, 0.25]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+                elif "genre" in state["slots_requested"] and "actor" not in state["slots_requested"] and "director" not in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.3, 0.7]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+                elif "genre" not in state["slots_requested"] and "actor" in state["slots_requested"] and "director" not in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.6, 0.4]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+                elif "genre" not in state["slots_requested"] and "actor" not in state["slots_requested"] and "director" in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.6, 0.4]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+                elif "genre" not in state["slots_requested"] and "actor" not in state["slots_requested"] and "director" not in state["slots_requested"]:
+                    self.movie_agenda = ["yes", "no"]
+                    self.movie_agenda_probas = [0.15, 0.85]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                    self.current_number_recos += 1
+        else:
+            if "(movie)" in agent_action['intent']:
+                self.movie_agenda = list(config.ITEMS_REQUEST_AFTER_MOVIE)
+                self.movie_agenda_probas = list(config.PROBA_REQUEST_AFTER_MOVIE)
+                user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                self.current_number_recos += 1
+            elif "(genre)" in agent_action['intent']:
+                if 'request(actor)' and 'request(plot)' in self.movie_agenda:
+                    self.movie_agenda.remove('request(genre)')
+                    self.movie_agenda_probas = [0.2, 0.15, 0.1, 0.2, 0.2, 0.15]
+                    if 'inform(watched)' in self.movie_agenda:
+                        self.movie_agenda.remove('inform(watched)')
+                        self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
+                    print(self.movie_agenda)
+                    print(self.movie_agenda_probas)
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                else:
+                    self.movie_agenda = ['yes', 'no', 'request(another)']
+                    self.movie_agenda_probas = [0.33, 0.33, 0.34]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+            elif "(actor)" in agent_action['intent']:
+                if 'request(genre)' and 'request(plot)' in self.movie_agenda:
+                    self.movie_agenda.remove('request(actor)')
+                    self.movie_agenda_probas = [0.2, 0.15, 0.1, 0.2, 0.2, 0.15]
+                    if 'inform(watched)' in self.movie_agenda:
+                        self.movie_agenda.remove('inform(watched)')
+                        self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
+                    print(self.movie_agenda)
+                    print(self.movie_agenda_probas)
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                else:
+                    self.movie_agenda = ['yes', 'no', 'request(another)']
+                    self.movie_agenda_probas = [0.33, 0.33, 0.34]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+            elif "(plot)" in agent_action['intent']:
+                if 'request(actor)' and 'request(genre)' in self.movie_agenda:
+                    self.movie_agenda.remove('request(plot)')
+                    self.movie_agenda_probas = [0.2, 0.15, 0.1, 0.15, 0.25, 0.15]
+                    if 'inform(watched)' in self.movie_agenda:
+                        self.movie_agenda.remove('inform(watched)')
+                        self.movie_agenda_probas = [0.25, 0.15, 0.15, 0.15, 0.3]
+                    print(self.movie_agenda)
+                    print(self.movie_agenda_probas)
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+                else:
+                    self.movie_agenda = ['yes', 'no', 'request(another)']
+                    self.movie_agenda_probas = [0.33, 0.33, 0.34]
+                    user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
+
+        return user_intention
 
     def msg_to_json(self, intent, cs, entity, entity_type, polarity):
         frame = {'intent': intent, 'cs': cs, 'entity': entity, 'entity_type': entity_type, 'polarity': polarity}

@@ -28,7 +28,7 @@ def main_rule_based():
 def main_rl():
 
     agent = simplified_rl_agent.Agent()
-    episodes = 1000  # Amount of games
+    episodes = 20000  # Amount of games
     max_steps = 30  # Maximum steps per episode
 
     for i in range(0, episodes):
@@ -39,17 +39,17 @@ def main_rl():
 
         while not dst.dialog_done and dst.turns < max_steps:
             state = copy.deepcopy(dst.state)
-            if i < 995:
+            if i < 19995:
                 agent_action = agent.next()
             else:
                 agent_action = agent.next_best(dst.state)
                 print("A: ", agent_action)
 
-            user_action = user.next(agent_action)
+            user_action = user.next(agent_action, dst.state)
             print("U: ", user_action)
 
             dst.update_state(agent_action, user_action)
-            reward = dst.compute_simple_reward()
+            reward = dst.compute_reward()
 
             if str(state) in agent.cs_qtable.index:
                 if str(dst.state) not in agent.cs_qtable.index:
@@ -61,6 +61,7 @@ def main_rl():
                     agent.cs_qtable.loc[str(dst.state)] = 0
                 agent.cs_qtable.at[str(state), agent_action['intent']] = (1 - agent.learning_rate) * agent.cs_qtable.at[str(state), agent_action['intent']] + agent.learning_rate * (reward + agent.gamma * np.max(agent.cs_qtable.loc[str(dst.state), :]))
 
+        print("final reward: ", str(reward))
     print(agent.cs_qtable)
 
 if __name__ == '__main__':

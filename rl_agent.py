@@ -14,53 +14,47 @@ class Agent():
         if config.GENERATE_VOICE:
             self.engine = utils.set_voice_engine("A", config.AGENT_VOICE)
 
-        self.currState = "start"
-        # Do we store the users preferences in a user model?
-        self.store_pref = True
+        self.actions = self.load_actions_list(config.AGENT_ACTIONS)
+        self.cs_qtable = pandas.DataFrame(0, index=[], columns=self.actions)
 
-        self.cs_qtable = pandas.DataFrame(0, index=config.CS_LABELS, columns=config.CS_LABELS)
-        print(self.cs_qtable)
-
-        self.user_action = None
-        self.movies_list = []
-
-        self.movie = {'title': "", 'year': "", 'plot': "", 'actors': [], 'genres': [], 'poster': ""}
-        self.actions = []
-
-        self.load_actions(config.AGENT_ACTIONS)
+        self.epsilon = 1.0  # Greed 100%
+        self.epsilon_min = 0.005  # Minimum greed 0.05%
+        self.epsilon_decay = 0.99993  # Decay multiplied with epsilon after each episode
+        self.learning_rate = 0.65
+        self.gamma = 0.65
 
     # Parse the model.csv file and transform that into a dict of Nodes representing the scenario
-    def load_actions(self, path):
+    def load_actions_list(self, path):
+        actions = []
         with open(path) as f:
             for line in f:
                 if "#" not in line:
-                    self.actions.append(line.replace("\n",""))
+                    actions.append(line.replace("\n",""))
+        return actions
 
-    def next(self, state):
-        if state["turns"] == 0:
-            next_state = "greeting"
-        else:
-            next_state = random.choice(self.actions)
+    def next(self):
 
-        self.actions.remove(next_state)
-        #print(str(len(self.actions)) + "     " + str(self.actions))
+        next_state = random.choice(self.actions)
+
         agent_cs = self.pick_cs()
         ack_cs = self.pick_cs()
-        new_msg = self.msg_to_json(next_state, self.movie, ack_cs, agent_cs)
+        new_msg = self.msg_to_json(next_state, ack_cs, agent_cs)
 
         return new_msg
 
-    def msg_to_json(self, intention, movie, ack_cs, cs):
-        frame = {'intent': intention, 'movie': movie, 'ack_cs': ack_cs, 'cs': cs}
-        return frame
+    def next_best(self, state):
+        current_state = self.cs_qtable.loc[str(state)]
+        action = current_state.idxmax()
 
-    def recommend(self):
-        if not self.movies_list:
-            self.movies_list = utils.query_blended_movies_list(self.user_model)
-        for movie in self.movies_list:
-            if movie['title'] not in self.user_model['liked_movies'] and movie['title'] not in self.user_model[
-                'disliked_movies']:
-                return movie['title']
+        agent_cs = self.pick_cs()
+        ack_cs = self.pick_cs()
+        new_msg = self.msg_to_json(action, ack_cs, agent_cs)
+
+        return new_msg
+
+    def msg_to_json(self, intention, ack_cs, cs):
+        frame = {'intent': intention, 'ack_cs': ack_cs, 'cs': cs}
+        return frame
 
     def pick_cs(self):
         agent_cs = random.choice(config.CS_LABELS)
