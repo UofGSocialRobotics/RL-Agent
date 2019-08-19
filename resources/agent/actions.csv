@@ -2,20 +2,20 @@
 greeting
 introduce
 request(last_movie)
-request(reason_like)
+#request(reason_like)
 # preference gathering
 request(genre)
 request(director)
 request(actor)
 # recommendation phase
-request(more)
-request(why)
-request(opinion)
+#request(more)
+#request(why)
+#request(opinion)
 # mandatory actions
 inform(movie)
-inform(plot)
-inform(actor)
-inform(genre)
+#inform(plot)
+#inform(actor)
+#inform(genre)
 # farewell
 request(feedback)
-goodbye
+#goodbye
