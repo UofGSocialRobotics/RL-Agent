@@ -397,18 +397,6 @@ def rapport_estimator_validate():
 #################################################################################################################
 #################################################################################################################
 
-def append_data_from_simulation(user_action, agent_action, agent_previous_action, rec_I_user, rec_I_agent, rec_P_agent, user_type):
-    if "P" in user_type:
-        if "NONE" in user_action['cs'] and "NONE" in agent_action['cs']:
-            rec_P_agent += 1
-    else:
-        if "NONE" not in user_action['cs']:
-            increment_agent_rec(agent_action['ack_cs'], rec_I_agent)
-        if "start" not in agent_previous_action['intent']:
-            if "NONE" not in agent_previous_action['cs']:
-                count(user_action['cs'], rec_I_user)
-    return rec_I_user, rec_I_agent, rec_P_agent
-
 def estimate_rapport(data):
     filename = config.RAPPORT_ESTIMATOR_MODEL
     loaded_model = pickle.load(open(filename, 'rb'))
@@ -421,17 +409,17 @@ def get_rapport_reward(rapport_score, none_ratio, user_type):
     print("None_ratio: " + str(none_ratio))
     if "P" in user_type:
         if none_ratio >= .75:
-            reward = 20
+            reward = 100
         if none_ratio >= .50:
-            reward = 10
+            reward = 50
         elif none_ratio >= .25:
-            reward = 5
+            reward = 25
     if rapport_score > 6:
-        reward = 50
+        reward = 100
     elif rapport_score > 5:
-        reward = 25
+        reward = 50
     elif rapport_score > 4:
-        reward = 10
+        reward = 25
     return reward
 
 

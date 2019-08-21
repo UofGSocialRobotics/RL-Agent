@@ -1,5 +1,4 @@
-
-CS_LABELS = ["SD", "PR", "HE", "VSN", "NONE"]
+CS_LABELS = ["NONE", "SD", "PR", "HE", "VSN"]
 CS_LABELS_DICT = {'SD': [], 'VSN': [], 'PR': [], 'HE': [], 'NONE': []}
 
 # User related
