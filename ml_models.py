@@ -417,9 +417,9 @@ def get_rapport_reward(rapport_score, none_ratio, user_type):
     if rapport_score > 6:
         reward = 100
     elif rapport_score > 5:
-        reward = 50
+        reward = 75
     elif rapport_score > 4:
-        reward = 25
+        reward = 30
     return reward
 
 
