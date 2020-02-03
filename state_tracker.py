@@ -89,9 +89,9 @@ class DialogState():
         #####################       Task Reward     #########################
         self.reward += -1
         if "request" in agent_action['intent'] and agent_action['intent'].replace('request(', '').replace(')', '') in state["slots_requested"]:
-            self.reward += -20
+            self.reward += -30
         if "last_movie" in agent_action['intent'] and "last_movie" in state["slots_requested"]:
-            self.reward += -20
+            self.reward += -30
         if self.dialog_done:
             if self.state['recos'] == 0:
                 self.reward += -50
@@ -107,8 +107,8 @@ class DialogState():
             rapport = ml_models.estimate_rapport(data)
             rapport_reward = ml_models.get_rapport_reward(rapport, self.rec_P_agent / self.turns, self.state["user_social_type"])
             self.reward = self.reward + rapport_reward
-            #print("Rapport :" + str(rapport))
-            #print("Reward from Rapport:" + str(rapport_reward))
+            print("Rapport :" + str(rapport))
+            print("Reward from Rapport:" + str(rapport_reward))
 
         #print(self.reward)
         return self.reward
