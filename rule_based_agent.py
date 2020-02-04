@@ -61,13 +61,14 @@ class Agent():
             elif any(s in self.user_action['intent'] for s in ('request(more)', 'inform(watched)', 'no')):
                 self.user_model['disliked_movies'].append(self.movie['title'])
 
+        # Todo: Uncomment if real recommendations are needed.
         # Get a movie recommendation title
-        if "inform(movie)" in next_state:
-            self.movie['title'] = self.recommend()
-            movie_info = utils.get_movie_info(self.movie['title'])
-            self.movie['plot'] = movie_info.get("Plot")
-            self.movie['actors'] = movie_info.get("Actors")
-            self.movie['genres'] = movie_info.get("Genre")
+        # if "inform(movie)" in next_state:
+        #     self.movie['title'] = self.recommend()
+        #     movie_info = utils.get_movie_info(self.movie['title'])
+        #     self.movie['plot'] = movie_info.get("Plot")
+        #     self.movie['actors'] = movie_info.get("Actors")
+        #     self.movie['genres'] = movie_info.get("Genre")
 
         self.currState = next_state
         agent_cs = self.pick_cs()

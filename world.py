@@ -33,10 +33,9 @@ def main_rule_based():
 def main():
 
     agent_rl = simplified_rl_agent.Agent()
-    agent_rule_based = rule_based_agent.Agent()
 
     rl_agent_rewards = rl_training(agent_rl)
-    rule_based_rewards = rule_based_interactions(agent_rule_based)
+    rule_based_rewards = rule_based_interactions()
     utils.plotting_rewards(rl_agent_rewards, rule_based_rewards)
 
 def rl_training(agent_rl):
@@ -71,7 +70,7 @@ def rl_training(agent_rl):
                 print("U: ", user_action)
 
             dst.update_state(agent_action, user_action, agent_previous_action, user_previous_action, user.user_type)
-            reward = dst.compute_reward(state, agent_action)
+            reward = dst.compute_reward(state, agent_action, user.number_recos)
             agent_rl.update_qtables(state, dst.state, agent_action, agent_previous_action, user_action,
                                     user_previous_action, reward)
 
@@ -93,7 +92,7 @@ def rl_training(agent_rl):
     return agent_reward_list
 
 
-def rule_based_interactions(agent_rule_based):
+def rule_based_interactions():
     total_reward_agent = 0
     agent_reward_list = []  # list of rewards for the rl_agent across x episodes
     for i in range(0, config.EPISODES):
@@ -122,7 +121,7 @@ def rule_based_interactions(agent_rule_based):
                 print("U: ", user_action)
 
             dst.update_state(agent_action, user_action, agent_previous_action, user_previous_action, user.user_type)
-            reward = dst.compute_reward(state, agent_action)
+            reward = dst.compute_reward(state, agent_action, user.number_recos)
 
         if i > (config.EPISODES - config.EPISODES_THRESHOLD) and config.VERBOSE_TRAINING > 1:
             print("final reward: ", str(reward))
@@ -139,6 +138,5 @@ def rule_based_interactions(agent_rule_based):
 
 if __name__ == '__main__':
     main()
-    #main_rule_based()
 
 

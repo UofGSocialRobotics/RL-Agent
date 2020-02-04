@@ -57,32 +57,7 @@ class DialogState():
                 if "NONE" not in user_previous_action['cs']:
                     ml_models.count(agent_action['ack_cs'], self.rec_I_agent)
 
-    # def compute_simple_reward(self):
-    #     self.reward += -1
-    #     if self.dialog_done:
-    #         if "genre" in self.state['slots_requested']:
-    #             if "Nov" in self.state["user_reco_type"]:
-    #                 self.reward += -30.0
-    #             else:
-    #                 self.reward += 30.0
-    #         else:
-    #             if "Nov" in self.state["user_reco_type"]:
-    #                 self.reward += 30.0
-    #             else:
-    #                 self.reward += -30.0
-    #         if self.turns < 3:
-    #             if "P" in self.state["user_social_type"]:
-    #                 self.reward += 30.0
-    #             else:
-    #                 self.reward += -30.0
-    #         else:
-    #             if "P" in self.state["user_social_type"]:
-    #                 self.reward += -30.0
-    #             else:
-    #                 self.reward += 30.0
-    #     return self.reward
-
-    def compute_reward(self, state, agent_action):
+    def compute_reward(self, state, agent_action, user_number_wanted_recos):
         task_reward = 0
         #Todo do not say bye before user gets to his limit
 
@@ -95,7 +70,8 @@ class DialogState():
         if self.dialog_done:
             if self.state['recos'] == 0:
                 self.reward += -50
-            self.reward = self.reward + self.state['recos'] * 100
+            #print("user wanted " + str(user_number_wanted_recos) + " recos and accepted " + str(self.state['recos']))
+            self.reward = self.reward + (self.state['recos']/user_number_wanted_recos) * 100
             task_reward = self.reward
             #self.reward = self.reward + (len(self.state["slots_requested"]) * 20)
 

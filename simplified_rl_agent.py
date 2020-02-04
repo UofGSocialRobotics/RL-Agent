@@ -13,9 +13,6 @@ class Agent():
         self.social_qtable = pandas.DataFrame(0, index=[], columns=config.CS_LABELS)
         self.ack_qtable = pandas.DataFrame(0, index=[], columns=config.CS_LABELS)
 
-        self.epsilon = 1.0  # Greed 100%
-        self.epsilon_min = 0.005  # Minimum greed 0.05%
-        self.epsilon_decay = 0.99993  # Decay multiplied with epsilon after each episode
         self.learning_rate = 0.65
         self.gamma = 0.65
 
