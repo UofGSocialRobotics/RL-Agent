@@ -177,6 +177,7 @@ def plotting_rewards(rl_rewards, rule_based_rewards):
     plt.plot(rl_rewards, label="rl_reward")
     plt.plot(rule_based_rewards, label="rule_based_reward")
     plt.ylabel('reward')
+    plt.xlabel('# of iterations')
     plt.legend(loc='best')
     plt.show()
 

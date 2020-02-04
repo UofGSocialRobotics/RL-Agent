@@ -39,6 +39,18 @@ class UserSimulator():
         self.set_preferences()
         self.set_type()
         self.set_number_recos()
+        self.set_other_features()
+
+    def set_other_features(self):
+        self.accepted_recos = 0
+        self.current_number_recos = 0
+
+        self.movie_agenda = list(config.ITEMS_REQUEST_AFTER_MOVIE)
+        self.movie_agenda_probas = list(config.PROBA_REQUEST_AFTER_MOVIE)
+
+        #self.list_actions = []
+
+        #self.load_actions_lexicon(config.USER_ACTIONS)
 
     def set_number_recos(self):
         self.number_recos = numpy.random.choice(numpy.arange(1, 7), p=config.PROBA_NUMBER_MOVIES)

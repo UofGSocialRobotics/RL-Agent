@@ -26,6 +26,20 @@ class Agent():
                            "liked_genres": [], 'disliked_genres': [], 'liked_movies': [], 'disliked_movies': []}
         self.load_model(config.DM_MODEL)
 
+    def init_agent(self):
+        self.currState = "start"
+        # Do we store the users preferences in a user model?
+        self.store_pref = True
+        self.movies_list = []
+
+        self.user_action = None
+
+        self.movie = {'title': "", 'year': "", 'plot': "", 'actors': [], 'genres': [], 'poster': ""}
+        self.nodes = {}
+        self.user_model = {"liked_cast": [], "disliked_cast": [], 'liked_crew': [], 'disliked_crew': [],
+                           "liked_genres": [], 'disliked_genres': [], 'liked_movies': [], 'disliked_movies': []}
+        self.load_model(config.DM_MODEL)
+
     # Parse the model.csv file and transform that into a dict of Nodes representing the scenario
     def load_model(self, path):
         with open(path) as f:
