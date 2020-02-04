@@ -6,6 +6,7 @@ import win32com.client as wincl
 import config
 import urllib.request
 import json
+import matplotlib.pyplot as plt
 
 
 def set_voice_engine(who, voice):
@@ -172,6 +173,12 @@ def replace_in_agent_sentence(sentence, movie, entity):
         sentence = sentence.replace("#entity", entity)
     return sentence
 
+def plotting_rewards(rl_rewards, rule_based_rewards):
+    plt.plot(rl_rewards, label="rl_reward")
+    plt.plot(rule_based_rewards, label="rule_based_reward")
+    plt.ylabel('reward')
+    plt.legend(loc='best')
+    plt.show()
 
 #################################################################################################################
 #################################################################################################################
@@ -296,6 +303,8 @@ def get_person_id(cast_name):
 def get_movie_info(movie_name):
     movie_name = movie_name.replace(" ", "%20")
     movie_name = movie_name.replace("é", "e")
+    movie_name = movie_name.replace("–", "-")
+    movie_name = movie_name.encode('ascii', 'ignore').decode('ascii')
     omdbURL = config.OMDB_SEARCH_MOVIE_INFO + movie_name + "&r=json" + "&apikey=" + config.OMDB_KEY
     data = urllib.request.urlopen(omdbURL)
     result = data.read()

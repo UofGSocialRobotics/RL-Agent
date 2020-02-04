@@ -32,7 +32,7 @@ class Agent():
     def next_best(self, state, user_action):
         current_state = self.task_qtable.loc[str(state)]
         action = current_state.idxmax()
-
+        #Todo Get rid of entity in state for qtable
         agent_cs = self.pick_best_cs(state, user_action)
         ack_cs = self.pick_best_cs(state, user_action)
         new_msg = self.msg_to_json(action, ack_cs, agent_cs)

@@ -406,7 +406,7 @@ def estimate_rapport(data):
 
 def get_rapport_reward(rapport_score, none_ratio, user_type):
     reward = 0
-    print("None_ratio: " + str(none_ratio))
+    #print("None_ratio: " + str(none_ratio))
     if "P" in user_type:
         if none_ratio >= .75:
             reward = 100

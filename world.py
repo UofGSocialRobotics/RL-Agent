@@ -9,7 +9,6 @@ import simplified_rl_agent
 import utils
 import state_tracker
 import numpy as np
-import matplotlib.pyplot as plt
 
 def main_rule_based():
     user = user_sim.UserSimulator()
@@ -34,22 +33,24 @@ def main_rule_based():
 def main():
 
     agent_rl = simplified_rl_agent.Agent()
-    agent_rule = rule_based_agent.Agent()
-    reward_list_agent = [] #list of rewards across x episodes
+    agent_rule_based = rule_based_agent.Agent()
+
+    rl_agent_rewards = rl_training(agent_rl)
+    rule_based_rewards = rule_based_interactions(agent_rule_based)
+    utils.plotting_rewards(rl_agent_rewards, rule_based_rewards)
+
+def rl_training(agent_rl):
     total_reward_agent = 0
-
-    #rl_agent configuration
-    epsilon = 1.0  # Greed 100%
-    epsilon_min = 0.005  # Minimum greed 0.05%
-    epsilon_decay = 0.993  # Decay multiplied with epsilon after each episode
-
-
+    epsilon = config.EPSILON
+    agent_reward_list = []  # list of rewards for the rl_agent across x episodes
     for i in range(0, config.EPISODES):
         user = user_sim.UserSimulator()
         dst = state_tracker.DialogState()
         dst.set_initial_state(user)
         if config.VERBOSE_TRAINING > 1:
-            print("Interaction number " + str(i) + "\nReco-Type: " + user.user_reco_pref + " --- Social-Type: " + user.user_type + " --- Recos Wanted: " + str(user.number_recos))
+            print("Interaction number " + str(
+                i) + "\nReco-Type: " + user.user_reco_pref + " --- Social-Type: " + user.user_type + " --- Recos Wanted: " + str(
+                user.number_recos))
         agent_action = {'intent': 'start', 'ack_cs': '', 'cs': ''}
         user_action = {'intent': '', 'cs': '', 'entity': '', 'entity_type': '', 'polarity': ''}
 
@@ -63,7 +64,7 @@ def main():
             else:
                 agent_action = agent_rl.next()
 
-            user_action = user.next(agent_action, dst.state)
+            user_action = user.next(agent_action, dst)
 
             if i > (config.EPISODES - config.EPISODES_THRESHOLD) and config.VERBOSE_TRAINING > 0:
                 print("A: ", agent_action)
@@ -71,23 +72,69 @@ def main():
 
             dst.update_state(agent_action, user_action, agent_previous_action, user_previous_action, user.user_type)
             reward = dst.compute_reward(state, agent_action)
-            agent_rl.update_qtables(state, dst.state, agent_action, agent_previous_action, user_action, user_previous_action, reward)
+            agent_rl.update_qtables(state, dst.state, agent_action, agent_previous_action, user_action,
+                                    user_previous_action, reward)
 
-        if i > (config.EPISODES - config.EPISODES_THRESHOLD):
+        if i > (config.EPISODES - config.EPISODES_THRESHOLD) and config.VERBOSE_TRAINING > 1:
             print("final reward: ", str(reward))
-        if i%config.EPISODES_THRESHOLD == 0:
-            reward_list_agent.append(total_reward_agent/config.EPISODES_THRESHOLD)
+
+        # rapport reward for plotting
+        if i % config.EPISODES_THRESHOLD == 0:
+            agent_reward_list.append(total_reward_agent / config.EPISODES_THRESHOLD)
             total_reward_agent = 0
         else:
             total_reward_agent += reward
-        if epsilon >= epsilon_min:
-            epsilon *= epsilon_decay
-    print("epsilon", str(epsilon))
-    #print(agent.task_qtable)
-    plt.plot(reward_list_agent)
-    plt.ylabel('reward')
-    plt.show()
 
+        if epsilon >= config.EPSILON_MIN:
+            epsilon *= config.EPSILON_DECAY
+
+    print("epsilon", str(epsilon))
+    # print(agent.task_qtable)
+    return agent_reward_list
+
+
+def rule_based_interactions(agent_rule_based):
+    total_reward_agent = 0
+    agent_reward_list = []  # list of rewards for the rl_agent across x episodes
+    for i in range(0, config.EPISODES):
+        agent_rule_based = rule_based_agent.Agent()
+        user = user_sim.UserSimulator()
+        dst = state_tracker.DialogState()
+        dst.set_initial_state(user)
+        if config.VERBOSE_TRAINING > 1:
+            print("Interaction number " + str(
+                i) + "\nReco-Type: " + user.user_reco_pref + " --- Social-Type: " + user.user_type + " --- Recos Wanted: " + str(
+                user.number_recos))
+        agent_action = {'intent': 'start', 'ack_cs': '', 'cs': ''}
+        user_action = {'intent': '', 'cs': '', 'entity': '', 'entity_type': '', 'polarity': ''}
+
+        while not dst.dialog_done and dst.turns < config.MAX_STEPS:
+            state = copy.deepcopy(dst.state)
+            agent_previous_action = copy.deepcopy(agent_action)
+            user_previous_action = copy.deepcopy(user_action)
+
+            agent_action = agent_rule_based.next(user_action)
+
+            user_action = user.next(agent_action, dst)
+
+            if config.VERBOSE_TRAINING > 1:
+                print("A: ", agent_action)
+                print("U: ", user_action)
+
+            dst.update_state(agent_action, user_action, agent_previous_action, user_previous_action, user.user_type)
+            reward = dst.compute_reward(state, agent_action)
+
+        if i > (config.EPISODES - config.EPISODES_THRESHOLD) and config.VERBOSE_TRAINING > 1:
+            print("final reward: ", str(reward))
+
+        # rapport reward for plotting
+        if i % config.EPISODES_THRESHOLD == 0:
+            agent_reward_list.append(total_reward_agent / config.EPISODES_THRESHOLD)
+            total_reward_agent = 0
+        else:
+            total_reward_agent += reward
+
+    return agent_reward_list
 
 
 if __name__ == '__main__':

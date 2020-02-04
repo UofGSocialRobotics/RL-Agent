@@ -38,8 +38,8 @@ class Agent():
                         node.add(line_input[i])
                 self.nodes[node.stateName] = node
 
-    def next(self, msg):
-        self.user_action = msg
+    def next(self, user_action):
+        self.user_action = user_action
         # Store entities (actors,directors, genres) in the user frame
         if self.store_pref and "inform" in self.user_action['intent']:
             if '+' in self.user_action['polarity']:

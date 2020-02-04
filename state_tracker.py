@@ -57,33 +57,33 @@ class DialogState():
                 if "NONE" not in user_previous_action['cs']:
                     ml_models.count(agent_action['ack_cs'], self.rec_I_agent)
 
-    def compute_simple_reward(self):
-        self.reward += -1
-        if self.dialog_done:
-            if "genre" in self.state['slots_requested']:
-                if "Nov" in self.state["user_reco_type"]:
-                    self.reward += -30.0
-                else:
-                    self.reward += 30.0
-            else:
-                if "Nov" in self.state["user_reco_type"]:
-                    self.reward += 30.0
-                else:
-                    self.reward += -30.0
-            if self.turns < 3:
-                if "P" in self.state["user_social_type"]:
-                    self.reward += 30.0
-                else:
-                    self.reward += -30.0
-            else:
-                if "P" in self.state["user_social_type"]:
-                    self.reward += -30.0
-                else:
-                    self.reward += 30.0
-        return self.reward
+    # def compute_simple_reward(self):
+    #     self.reward += -1
+    #     if self.dialog_done:
+    #         if "genre" in self.state['slots_requested']:
+    #             if "Nov" in self.state["user_reco_type"]:
+    #                 self.reward += -30.0
+    #             else:
+    #                 self.reward += 30.0
+    #         else:
+    #             if "Nov" in self.state["user_reco_type"]:
+    #                 self.reward += 30.0
+    #             else:
+    #                 self.reward += -30.0
+    #         if self.turns < 3:
+    #             if "P" in self.state["user_social_type"]:
+    #                 self.reward += 30.0
+    #             else:
+    #                 self.reward += -30.0
+    #         else:
+    #             if "P" in self.state["user_social_type"]:
+    #                 self.reward += -30.0
+    #             else:
+    #                 self.reward += 30.0
+    #     return self.reward
 
     def compute_reward(self, state, agent_action):
-
+        task_reward = 0
         #Todo do not say bye before user gets to his limit
 
         #####################       Task Reward     #########################
@@ -96,6 +96,7 @@ class DialogState():
             if self.state['recos'] == 0:
                 self.reward += -50
             self.reward = self.reward + self.state['recos'] * 100
+            task_reward = self.reward
             #self.reward = self.reward + (len(self.state["slots_requested"]) * 20)
 
 
@@ -107,8 +108,9 @@ class DialogState():
             rapport = ml_models.estimate_rapport(data)
             rapport_reward = ml_models.get_rapport_reward(rapport, self.rec_P_agent / self.turns, self.state["user_social_type"])
             self.reward = self.reward + rapport_reward
-            print("Rapport :" + str(rapport))
-            print("Reward from Rapport:" + str(rapport_reward))
+            #print("Rapport :" + str(rapport))
+            print("Reward total: " + str(self.reward))
+            print("Reward from Rapport: " + str(rapport_reward) + " and from Task: " + str(task_reward))
 
         #print(self.reward)
         return self.reward

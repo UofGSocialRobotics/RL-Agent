@@ -50,7 +50,10 @@ RECO_ACCEPTANCE_MODEL = "./resources/reco_acceptance_model.pkl"
 RECO_ACCEPTANCE_DATASET = "./resources/user/fake_task_data.csv"
 
 # Training Related
-EPISODES = 1000 # Number of iterations
+EPISODES = 500 # Number of iterations
 MAX_STEPS = 20  # Maximum steps per episode
 EPISODES_THRESHOLD = 50
 VERBOSE_TRAINING = 1 #0 = nothing printed; 1 = reward only; 2 = more
+EPSILON = 1.0  # Greed 100%
+EPSILON_MIN = 0.005  # Minimum greed 0.05%
+EPSILON_DECAY = 0.993  # Decay multiplied with epsilon after each episode
