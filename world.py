@@ -6,6 +6,7 @@ import config
 import simplified_rl_agent
 import utils
 import state_tracker
+import matplotlib.pyplot as plt
 
 def main():
 
@@ -13,13 +14,17 @@ def main():
     agent_rule_based = rule_based_agent.Agent()
     user = user_sim.UserSimulator()
     dst = state_tracker.DialogState()
+    fig, subplots = plt.subplots(1, 3, sharex=True, sharey=True)
 
     print("Start")
-    rl_agent_rewards = rl_training(agent_rl, user, dst)
+    rl_agent_rewards, rl_task_rewards, rl_social_rewards = rl_training(agent_rl, user, dst)
     print("RL training done")
-    rule_based_rewards = rule_based_interactions(agent_rule_based, user, dst)
+    rule_based_rewards, rule_based_task_rewards, rule_based_social_rewards = rule_based_interactions(agent_rule_based, user, dst)
     print("Rule based interactions done")
-    utils.plotting_rewards(rl_agent_rewards, rule_based_rewards)
+    utils.plotting_rewards("Total Rewards", rl_agent_rewards, rule_based_rewards, subplots, 0)
+    utils.plotting_rewards("Task Rewards", rl_task_rewards, rule_based_task_rewards, subplots, 1)
+    utils.plotting_rewards("Social Rewards", rl_social_rewards, rule_based_social_rewards, subplots, 2)
+    plt.show()
 
 def initialize(user,dst):
     user.generate_user()
@@ -36,13 +41,18 @@ def queue_rewards_for_plotting(i, agent_reward_list, total_reward_agent, reward)
         total_reward_agent = 0
     else:
         total_reward_agent += reward
+
     return agent_reward_list, total_reward_agent
 
 
 def rl_training(agent, user, dst):
     total_reward_agent = 0
+    total_task_reward = 0
+    total_social_reward = 0
     epsilon = config.EPSILON
     agent_reward_list = []  # list of rewards for the rl_agent across config.EPISODES episodes
+    agent_task_reward_list = []
+    agent_social_reward_list = []
 
     for i in range(0, config.EPISODES):
         agent_action, user_action = initialize(user, dst)
@@ -64,23 +74,34 @@ def rl_training(agent, user, dst):
                 print("U: ", user_action)
 
             dst.update_state(agent_action, user_action, agent_previous_action, user_previous_action, user.user_type)
-            reward = dst.compute_reward(state, agent_action, user.number_recos)
+            reward, task_reward, rapport_reward = dst.compute_reward(state, agent_action, user.number_recos)
             agent.update_qtables(state, dst.state, agent_action, agent_previous_action, user_action,
                                     user_previous_action, reward)
 
         agent_reward_list, total_reward_agent = queue_rewards_for_plotting(i, agent_reward_list, total_reward_agent, reward)
+        agent_task_reward_list, total_task_reward = queue_rewards_for_plotting(i, agent_task_reward_list, total_task_reward, task_reward)
+        agent_social_reward_list, total_social_reward = queue_rewards_for_plotting(i, agent_social_reward_list, total_social_reward, rapport_reward)
+
 
         if epsilon >= config.EPSILON_MIN:
             epsilon *= config.EPSILON_DECAY
 
-    # print("epsilon", str(epsilon))
-    # print(agent.task_qtable)
-    return agent_reward_list
+    print("epsilon", str(epsilon))
+    print(agent.task_qtable)
+    agent.task_qtable.to_csv(config.TASK_QTABLE, encoding='utf-8')
+    agent.social_qtable.to_csv(config.SOCIAL_QTABLE, encoding='utf-8')
+
+    return agent_reward_list, agent_task_reward_list, agent_social_reward_list
 
 
 def rule_based_interactions(agent, user, dst):
     total_reward_agent = 0
-    agent_reward_list = []  # list of rewards for the rule_based_agent across config.EPISODES episodes
+    total_task_reward = 0
+    total_social_reward = 0
+    agent_reward_list = []# list of rewards for the rule_based_agent across config.EPISODES episodes
+    agent_task_reward_list = []
+    agent_social_reward_list = []
+
     for i in range(0, config.EPISODES):
         agent.init_agent()
         agent_action, user_action = initialize(user, dst)
@@ -99,11 +120,13 @@ def rule_based_interactions(agent, user, dst):
                 print("U: ", user_action)
 
             dst.update_state(agent_action, user_action, agent_previous_action, user_previous_action, user.user_type)
-            reward = dst.compute_reward(state, agent_action, user.number_recos)
+            reward, task_reward, rapport_reward = dst.compute_reward(state, agent_action, user.number_recos)
 
         agent_reward_list, total_reward_agent = queue_rewards_for_plotting(i, agent_reward_list, total_reward_agent, reward)
+        agent_task_reward_list, total_task_reward = queue_rewards_for_plotting(i, agent_task_reward_list, total_task_reward, task_reward)
+        agent_social_reward_list, total_social_reward = queue_rewards_for_plotting(i, agent_social_reward_list, total_social_reward, rapport_reward)
 
-    return agent_reward_list
+    return agent_reward_list, agent_task_reward_list, agent_social_reward_list
 
 
 if __name__ == '__main__':

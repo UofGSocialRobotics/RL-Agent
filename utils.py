@@ -173,13 +173,12 @@ def replace_in_agent_sentence(sentence, movie, entity):
         sentence = sentence.replace("#entity", entity)
     return sentence
 
-def plotting_rewards(rl_rewards, rule_based_rewards):
-    plt.plot(rl_rewards, label="rl_reward")
-    plt.plot(rule_based_rewards, label="rule_based_reward")
-    plt.ylabel('reward')
-    plt.xlabel('# of iterations')
-    plt.legend(loc='best')
-    plt.show()
+def plotting_rewards(title, rl_rewards, rule_based_rewards, subplots, col):
+    subplots[col].title.set_text(title)
+    subplots[col].plot(rl_rewards, label="rl_reward")
+    subplots[col].plot(rule_based_rewards, label="rule_based_reward")
+    subplots[col].legend(loc='best')
+
 
 #################################################################################################################
 #################################################################################################################

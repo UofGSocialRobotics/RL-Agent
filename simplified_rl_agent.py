@@ -3,6 +3,7 @@ import random
 import config
 import pandas
 import numpy as np
+from numpy.random import randint
 
 
 class Agent():
@@ -54,6 +55,7 @@ class Agent():
 
     def update_qtables(self, prev_state, current_state, agent_action, agent_previous_action, user_action, user_previous_action, reward):
         # update task qtable
+
         if str(prev_state) in self.task_qtable.index:
             if str(current_state) not in self.task_qtable.index:
                 self.task_qtable.loc[str(current_state)] = 0

@@ -407,22 +407,26 @@ def estimate_rapport(data):
 def get_rapport_reward(rapport_score, none_ratio, user_type):
     reward = 0
     #print("None_ratio: " + str(none_ratio))
+    # if "P" in user_type:
+    #     if none_ratio >= .75:
+    #         reward = 100
+    #     if none_ratio >= .50:
+    #         reward = 50
+    #     elif none_ratio >= .25:
+    #         reward = 25
+    # if rapport_score > 6:
+    #     reward = 100
+    # elif rapport_score > 5:
+    #     reward = 75
+    # elif rapport_score > 4:
+    #     reward = 30
+    # return reward
+
     if "P" in user_type:
-        if none_ratio >= .75:
-            reward = 100
-        if none_ratio >= .50:
-            reward = 50
-        elif none_ratio >= .25:
-            reward = 25
-    if rapport_score > 6:
-        reward = 100
-    elif rapport_score > 5:
-        reward = 75
-    elif rapport_score > 4:
-        reward = 30
+        reward = none_ratio *100
+    else:
+        reward = (rapport_score/7) * 100
     return reward
-
-
 
 if __name__ == '__main__':
     #build_reciprocity_dataset()

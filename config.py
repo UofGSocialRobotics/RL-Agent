@@ -48,13 +48,16 @@ RAPPORT_ESTIMATOR_MODEL = "./resources/rapport_estimator_model.pkl"
 RAPPORT_ESTIMATOR_TEST_MODEL = "./resources/rapport_estimator_model_test.pkl"
 RECO_ACCEPTANCE_MODEL = "./resources/reco_acceptance_model.pkl"
 RECO_ACCEPTANCE_DATASET = "./resources/user/fake_task_data.csv"
+TASK_QTABLE = "./resources/agent/task_qtable.csv"
+SOCIAL_QTABLE = "./resources/agent/social_qtable.csv"
+
 
 # Training Related
-EPISODES = 1000
+EPISODES = 100000
 # Number of iterations
 MAX_STEPS = 20  # Maximum steps per episode
-EPISODES_THRESHOLD = 50
+EPISODES_THRESHOLD = 100
 VERBOSE_TRAINING = 0 #0 = nothing printed; 1 = reward only; 2 = more
-EPSILON = 1.0  # Greed 100%
+EPSILON = 1.0  #
 EPSILON_MIN = 0.005  # Minimum greed 0.05%
-EPSILON_DECAY = 0.993  # Decay multiplied with epsilon after each episode
+EPSILON_DECAY = 0.999993  # Decay multiplied with epsilon after each episode
