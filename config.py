@@ -53,11 +53,18 @@ SOCIAL_QTABLE = "./resources/agent/social_qtable.csv"
 
 
 # Training Related
-EPISODES = 100000
+DQN_STATE_SPACE = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+DQN_ACTION_SPACE = [0,0,0,0,0,0,0]
+BATCH_SIZE = 32
+EPISODES = 10000
 # Number of iterations
 MAX_STEPS = 20  # Maximum steps per episode
 EPISODES_THRESHOLD = 100
 VERBOSE_TRAINING = 0 #0 = nothing printed; 1 = reward only; 2 = more
+
+
+LEARNING_RATE = 0.001
+GAMMA = 0.95
 EPSILON = 1.0  #
 EPSILON_MIN = 0.005  # Minimum greed 0.05%
-EPSILON_DECAY = 0.999993  # Decay multiplied with epsilon after each episode
+EPSILON_DECAY = 0.995  # Decay multiplied with epsilon after each episode
