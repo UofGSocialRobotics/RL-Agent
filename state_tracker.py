@@ -1,4 +1,5 @@
 import ml_models
+import numpy as np
 
 
 class DialogState():
@@ -30,9 +31,9 @@ class DialogState():
         self.state["user_social_type"] = user.user_type
         self.state["user_reco_type"] = user.user_reco_pref
         self.state["slots_requested"] = []
-        self.state["user_current_cs"] = False
+        self.state["user_current_cs"] = "NONE"
         self.state["user_action"] = ''
-        #self.state["previous_user_action"] = ''
+        self.state["previous_agent_cs"] = ''
         self.state["previous_agent_action"] = ''
 
     def update_state(self, agent_action, user_action, agent_previous_action, user_previous_action, user_type):
@@ -54,7 +55,7 @@ class DialogState():
             self.state["user_current_cs"] = user_action['cs']
         self.state["user_action"] = user_action['intent']
         self.state["previous_agent_action"] = agent_action['intent']
-        if "bye" in agent_action['intent']:
+        if "bye" in agent_action['intent'] or "bye" in user_action['intent']:
             self.dialog_done = True
         self.append_data_from_simulation(agent_action, user_action, agent_previous_action, user_previous_action, user_type)
 
@@ -100,3 +101,59 @@ class DialogState():
 
         #print(self.reward)
         return self.reward, task_reward, rapport_reward
+
+    def vectorize(self):
+        state_vector = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        if "I" in self.state["user_social_type"]:
+            state_vector[0] = 1
+        if "crew" in self.state["slots_requested"]:
+            state_vector[1] = 1
+        if "cast" in self.state["slots_requested"]:
+            state_vector[2] = 1
+        if "genre" in self.state["slots_requested"]:
+            state_vector[3] = 1
+        if "SD" in self.state["user_current_cs"]:
+            state_vector[4] = 1
+        if "PR" in self.state["user_current_cs"]:
+            state_vector[5] = 1
+        if "HE" in self.state["user_current_cs"]:
+            state_vector[6] = 1
+        if "VSN" in self.state["user_current_cs"]:
+            state_vector[7] = 1
+        if "yes" in self.state["user_action"]:
+            state_vector[8] = 1
+        if "no" in self.state["user_action"]:
+            state_vector[9] = 1
+        if "last_movie" in self.state["user_action"]:
+            state_vector[10] = 1
+        if "cast" in self.state["user_action"]:
+            state_vector[11] = 1
+        if "crew" in self.state["user_action"]:
+            state_vector[12] = 1
+        if "genre" in self.state["user_action"]:
+            state_vector[13] = 1
+        if "SD" in self.state["previous_agent_cs"]:
+            state_vector[14] = 1
+        if "PR" in self.state["previous_agent_cs"]:
+            state_vector[15] = 1
+        if "HE" in self.state["previous_agent_cs"]:
+            state_vector[16] = 1
+        if "VSN" in self.state["previous_agent_cs"]:
+            state_vector[17] = 1
+        if "greeting" in self.state["previous_agent_action"]:
+            state_vector[18] = 1
+        if "last_movie" in self.state["previous_agent_action"]:
+            state_vector[19] = 1
+        if "cast" in self.state["previous_agent_action"]:
+            state_vector[20] = 1
+        if "crew" in self.state["previous_agent_action"]:
+            state_vector[21] = 1
+        if "genre" in self.state["previous_agent_action"]:
+            state_vector[22] = 1
+        if "(movie)" in self.state["previous_agent_action"]:
+            state_vector[23] = 1
+        if "goodbye" in self.state["previous_agent_action"]:
+            state_vector[24] = 1
+        state_vector = np.asarray(state_vector)
+        state_vector = state_vector[np.newaxis, :]
+        return state_vector

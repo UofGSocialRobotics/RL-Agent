@@ -1,6 +1,8 @@
 import os
 import csv
 import pickle
+
+from keras.optimizers import Adam
 from numpy import array
 
 from scipy import stats
@@ -19,6 +21,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 from sklearn import metrics
+from keras.models import Sequential
+from keras.layers import Dense
 
 
 def build_task_model():
@@ -405,23 +409,6 @@ def estimate_rapport(data):
     return result
 
 def get_rapport_reward(rapport_score, none_ratio, user_type):
-    reward = 0
-    #print("None_ratio: " + str(none_ratio))
-    # if "P" in user_type:
-    #     if none_ratio >= .75:
-    #         reward = 100
-    #     if none_ratio >= .50:
-    #         reward = 50
-    #     elif none_ratio >= .25:
-    #         reward = 25
-    # if rapport_score > 6:
-    #     reward = 100
-    # elif rapport_score > 5:
-    #     reward = 75
-    # elif rapport_score > 4:
-    #     reward = 30
-    # return reward
-
     if "P" in user_type:
         reward = none_ratio *100
     else:
@@ -432,3 +419,22 @@ if __name__ == '__main__':
     #build_reciprocity_dataset()
     #cross_validate()
     build_task_model()
+
+
+
+#################################################################################################################
+#################################################################################################################
+##############                                                                                ###################
+##############                                  DQN Functions                                 ###################
+##############                                                                                ###################
+#################################################################################################################
+#################################################################################################################
+
+def _build_DQN_model(state_size, action_size):
+    # Neural Net for Deep-Q learning Model
+    model = Sequential()
+    model.add(Dense(24, input_dim=state_size, activation='relu'))
+    model.add(Dense(24, activation='relu'))
+    model.add(Dense(action_size, activation='softmax'))
+    model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=self.learning_rate))
+    return model

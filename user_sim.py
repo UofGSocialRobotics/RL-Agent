@@ -139,7 +139,7 @@ class UserSimulator():
             elif "opinion" in agent_action['intent']:
                 user_intention = 'inform(opinion)'
             else:
-                user_intention = "no"
+                user_intention = "bye"
 
         user_cs = self.pick_cs()
 

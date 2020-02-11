@@ -1,51 +1,116 @@
+import os
 import random
+from collections import deque
 import config
-import utils
 import pandas
+import numpy as np
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.optimizers import Adam
 
 
 class Agent():
     def __init__(self):
 
-        if config.GENERATE_SENTENCE:
-            self.sentenceDB = utils.load_agent_sentence_model(config.AGENT_SENTENCES)
-            self.ackDB = utils.load_agent_ack_model(config.AGENT_ACKS)
+        self.weight_backup = ".//resources//agent//dqn_weight.h5"
+        self.memory = deque(maxlen=2000)
 
-        if config.GENERATE_VOICE:
-            self.engine = utils.set_voice_engine("A", config.AGENT_VOICE)
+        self.actions = ["greeting", "request(last_movie)", "request(cast)", "request(crew)", "request(genre)", "inform(movie)", "goodbye"]
+        self.social_qtable = pandas.DataFrame(0, index=[], columns=config.CS_LABELS)
+        self.ack_qtable = pandas.DataFrame(0, index=[], columns=config.CS_LABELS)
+        self.state_size = len(config.DQN_STATE_SPACE)
 
-        self.actions = self.load_actions_list(config.AGENT_ACTIONS)
-        self.cs_qtable = pandas.DataFrame(0, index=[], columns=self.actions)
+        self.learning_rate = config.LEARNING_RATE
+        self.gamma = config.GAMMA
+        self.exploration_rate = config.EPSILON
+        self.exploration_min = config.EPSILON_MIN
+        self.exploration_decay = config.EPSILON_DECAY
+        self.model = self.build_DQN_model()
 
-        self.epsilon = 1.0  # Greed 100%
-        self.epsilon_min = 0.005  # Minimum greed 0.05%
-        self.epsilon_decay = 0.99993  # Decay multiplied with epsilon after each episode
-        self.learning_rate = 0.65
-        self.gamma = 0.65
+    def build_DQN_model(self):
+        # Neural Net for Deep-Q learning Model
+        model = Sequential()
+        model.add(Dense(24, input_dim=self.state_size, activation='relu'))
+        model.add(Dense(24, activation='relu'))
+        model.add(Dense(len(self.actions), activation='softmax'))
+        model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=self.learning_rate))
 
-    # Parse the model.csv file and transform that into a dict of Nodes representing the scenario
-    def load_actions_list(self, path):
-        actions = []
-        with open(path) as f:
-            for line in f:
-                if "#" not in line:
-                    actions.append(line.replace("\n",""))
-        return actions
+        if os.path.isfile(self.weight_backup):
+            self.model.load_weights(self.weight_backup)
+            self.exploration_rate = self.exploration_min
+        return model
+
+    def save_model(self):
+        self.model.save(self.weight_backup)
+
+    def remember(self, state, action, reward, next_state, done):
+        self.memory.append((state, action, reward, next_state, done))
+
+    def vectorize_action(self, action):
+        action_vector = [0,0,0,0,0,0,0]
+        if "greeting" in action:
+            action_vector[0] = 1
+        if "request(last_movie)" in action:
+            action_vector[1] = 1
+        if "request(cast)" in action:
+            action_vector[2] = 1
+        if "request(crew)" in action:
+            action_vector[3] = 1
+        if "request(genre)" in action:
+            action_vector[4] = 1
+        if "inform(movie)" in action:
+            action_vector[5] = 1
+        if "goodbye" in action:
+            action_vector[6] = 1
+        action_vector = np.asarray(action_vector)
+        action_vector = action_vector[np.newaxis, :]
+        return action_vector
+
+    def devectorize_action(self, action):
+        action_vector = [0,0,0,0,0,0,0]
+        if action == 0:
+            action_name = "greeting"
+        if action == 1:
+            action_name = "request(last_movie)"
+        if action == 2:
+            action_name = "request(cast)"
+        if action == 3:
+            action_name = "request(crew)"
+        if action == 4:
+            action_name = "request(genre)"
+        if action == 5:
+            action_name = "inform(movie)"
+        if action == 6:
+            action_name = "goodbye"
+        return action_name
+
+
+    def replay(self, sample_batch_size):
+        if len(self.memory) < sample_batch_size:
+            return
+        sample_batch = random.sample(self.memory, sample_batch_size)
+        for state, action, reward, next_state, done in sample_batch:
+            target = reward
+            if not done:
+                target = reward + self.gamma * np.amax(self.model.predict(next_state))
+            target_f = self.model.predict(state)
+            target_f[0][action] = target
+            self.model.fit(state, target_f, epochs=1, verbose=0)
+        if self.exploration_rate > self.exploration_min:
+            self.exploration_rate *= self.exploration_decay
 
     def next(self):
-
         next_state = random.choice(self.actions)
-
         agent_cs = self.pick_cs()
         ack_cs = self.pick_cs()
         new_msg = self.msg_to_json(next_state, ack_cs, agent_cs)
-
         return new_msg
 
     def next_best(self, state):
-        current_state = self.cs_qtable.loc[str(state)]
-        action = current_state.idxmax()
-
+        vectorized_state = state.vectorize()
+        act_values = self.model.predict(vectorized_state)
+        action = np.argmax(act_values[0])
+        action = self.devectorize_action(action)
         agent_cs = self.pick_cs()
         ack_cs = self.pick_cs()
         new_msg = self.msg_to_json(action, ack_cs, agent_cs)
@@ -59,3 +124,34 @@ class Agent():
     def pick_cs(self):
         agent_cs = random.choice(config.CS_LABELS)
         return agent_cs
+
+    def pick_best_cs(self, state, user_action):
+        cs_row = []
+        cs_row.append(state["user_social_type"])
+        cs_row.append(user_action["cs"])
+        current_state = self.social_qtable.loc[str(cs_row)]
+        agent_cs = current_state.idxmax()
+        return agent_cs
+
+    def update_qtables(self, prev_state, current_state, agent_action, agent_previous_action, user_action, user_previous_action, reward):
+
+        previous_cs_row = []
+        previous_cs_row.append(current_state["user_social_type"])
+        previous_cs_row.append(user_previous_action["cs"])
+        cs_row = []
+        cs_row.append(current_state["user_social_type"])
+        cs_row.append(user_action["cs"])
+            # update social qtable
+        if str(previous_cs_row) in self.social_qtable.index:
+            if str(cs_row) not in self.social_qtable.index:
+                self.social_qtable.loc[str(cs_row)] = 0
+            self.social_qtable.at[str(previous_cs_row), agent_action['cs']] = (1 - self.learning_rate) * self.social_qtable.at[
+                str(previous_cs_row), agent_action['cs']] + self.learning_rate * (reward + self.gamma * np.max(
+                self.social_qtable.loc[str(cs_row), :]))
+        else:
+            self.social_qtable.loc[str(previous_cs_row)] = 0
+            if str(cs_row) not in self.social_qtable.index:
+                self.social_qtable.loc[str(cs_row)] = 0
+            self.social_qtable.at[str(previous_cs_row), agent_action['cs']] = (1 - self.learning_rate) * self.social_qtable.at[
+                str(previous_cs_row), agent_action['cs']] + self.learning_rate * (reward + self.gamma * np.max(
+                self.social_qtable.loc[str(cs_row), :]))
