@@ -15,10 +15,9 @@ class Agent():
         self.weight_backup = ".//resources//agent//dqn_weight.h5"
         self.memory = deque(maxlen=2000)
 
-        self.actions = ["greeting", "request(last_movie)", "request(cast)", "request(crew)", "request(genre)", "inform(movie)", "goodbye"]
+        self.actions = config.AGENT_ACTIONS
         self.social_qtable = pandas.DataFrame(0, index=[], columns=config.CS_LABELS)
         self.ack_qtable = pandas.DataFrame(0, index=[], columns=config.CS_LABELS)
-        self.state_size = len(config.DQN_STATE_SPACE)
 
         self.learning_rate = config.LEARNING_RATE
         self.gamma = config.GAMMA
@@ -30,8 +29,8 @@ class Agent():
     def build_DQN_model(self):
         # Neural Net for Deep-Q learning Model
         model = Sequential()
-        model.add(Dense(24, input_dim=self.state_size, activation='relu'))
-        model.add(Dense(24, activation='relu'))
+        model.add(Dense(24, input_dim=config.DQN_STATE_SPACE, activation='relu'))
+        model.add(Dense(12, activation='relu'))
         model.add(Dense(len(self.actions), activation='softmax'))
         model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=self.learning_rate))
 
@@ -99,22 +98,18 @@ class Agent():
         if self.exploration_rate > self.exploration_min:
             self.exploration_rate *= self.exploration_decay
 
-    def next(self):
-        next_state = random.choice(self.actions)
+    def next(self, state):
+        if random.uniform(0, 1) > config.EPSILON:
+            vectorized_state = state.vectorize()
+            act_values = self.model.predict(vectorized_state)
+            action = np.argmax(act_values[0])
+            agent_action = self.devectorize_action(action)
+        else:
+            agent_action = random.choice(self.actions)
+
         agent_cs = self.pick_cs()
         ack_cs = self.pick_cs()
-        new_msg = self.msg_to_json(next_state, ack_cs, agent_cs)
-        return new_msg
-
-    def next_best(self, state):
-        vectorized_state = state.vectorize()
-        act_values = self.model.predict(vectorized_state)
-        action = np.argmax(act_values[0])
-        action = self.devectorize_action(action)
-        agent_cs = self.pick_cs()
-        ack_cs = self.pick_cs()
-        new_msg = self.msg_to_json(action, ack_cs, agent_cs)
-
+        new_msg = self.msg_to_json(agent_action, ack_cs, agent_cs)
         return new_msg
 
     def msg_to_json(self, intention, ack_cs, cs):

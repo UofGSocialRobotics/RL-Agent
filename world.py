@@ -1,6 +1,6 @@
 import copy
 import random
-import rl_agent
+import deep_rl_agent
 import user_sim
 import rule_based_agent
 import config
@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 def main():
 
     agent_rl = simplified_rl_agent.Agent()
-    agent_deep_rl = rl_agent.Agent()
+    agent_deep_rl = deep_rl_agent.Agent()
     agent_rule_based = rule_based_agent.Agent()
     user = user_sim.UserSimulator()
     dst = state_tracker.DialogState()
@@ -68,10 +68,7 @@ def deep_rl_training(agent,user,dst):
             agent_previous_action = copy.deepcopy(agent_action)
             user_previous_action = copy.deepcopy(user_action)
 
-            if random.uniform(0, 1) > epsilon:
-                agent_action = agent.next_best(dst)
-            else:
-                agent_action = agent.next()
+            agent_action = agent.next(dst)
 
             user_action = user.next(agent_action, dst)
 
@@ -190,6 +187,7 @@ def rule_based_interactions(agent, user, dst):
 
 
 if __name__ == '__main__':
-    main()
+    utils.generate_actions_lexicons()
+    #main()
 
 

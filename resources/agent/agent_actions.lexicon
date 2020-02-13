@@ -5,8 +5,8 @@ request(last_movie)
 #request(reason_like)
 # preference gathering
 request(genre)
-request(director)
-request(actor)
+request(crew)
+request(cast)
 # recommendation phase
 #request(more)
 #request(why)

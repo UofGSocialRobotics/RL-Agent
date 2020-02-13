@@ -1,12 +1,49 @@
 from itertools import zip_longest
-
+import os
+import csv
 import pyttsx3
 import random
 import win32com.client as wincl
 import config
 import urllib.request
 import json
-import matplotlib.pyplot as plt
+
+def generate_actions_lexicons():
+    print("Creating lexicons ... ")
+    dialogue_path = config.TRAINING_DIALOGUE_PATH
+    agent_actions_path = config.AGENT_ACTIONS
+    user_actions_path = config.USER_ACTIONS
+    agent_actions_list = []
+    user_actions_list = []
+    agent_triple = []
+    for root, dirs, files in os.walk("./resources/training_dialogues"):
+        for name in files:
+            if name.endswith(".pkl.csv"):
+                with open(dialogue_path + "/" + name, mode='rt') as csv_file:
+                    interaction = csv.reader(csv_file, delimiter=',')
+                    for row in interaction:
+                        if row[5] not in agent_actions_list:
+                            agent_actions_list.append(row[5])
+                            print(row[5])
+                        if row[8] not in user_actions_list:
+                            user_actions_list.append(row[8])
+                            print(row[8])
+                        triple = row[4] + row[5] + row[6]
+                        if triple not in agent_triple:
+                            agent_triple.append(triple)
+
+    print(len(agent_triple))
+    file_agent = open(agent_actions_path, "w")
+    for action in agent_actions_list:
+        file_agent.writelines(action + "\n")
+    file_agent.close()
+
+    file_user = open(user_actions_path, "w")
+    for action in user_actions_list:
+        file_user.write(action + "\n")
+    file_user.close()
+
+    print("Lexicons created")
 
 
 def set_voice_engine(who, voice):
