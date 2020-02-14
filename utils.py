@@ -7,27 +7,52 @@ import win32com.client as wincl
 import config
 import urllib.request
 import json
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
+from keras.utils import to_categorical
 
-def generate_actions_lexicons():
-    print("Creating lexicons ... ")
+def preprocess_dialogue_data():
+    print("Creating lexicons and NN data... ")
     dialogue_path = config.TRAINING_DIALOGUE_PATH
     agent_actions_path = config.AGENT_ACTIONS
     user_actions_path = config.USER_ACTIONS
     agent_actions_list = []
     user_actions_list = []
     agent_triple = []
+    all_user_types = []
+    all_agent_ack_CS = []
+    all_agent_actions = []
+    all_agent_CS = []
+    all_user_actions = []
+    all_user_CS = []
+
+    processed_dialogues = []
+    dialogue_step = {'State':[], 'Action':[], 'Reward':0, 'Next_State':[], 'Done':False}
     for root, dirs, files in os.walk("./resources/training_dialogues"):
         for name in files:
             if name.endswith(".pkl.csv"):
                 with open(dialogue_path + "/" + name, mode='rt') as csv_file:
                     interaction = csv.reader(csv_file, delimiter=',')
                     for row in interaction:
+                        if row[0] in [1,2,3]:
+                            all_user_types.append("I")
+                        else:
+                            all_user_types.append("P")
+                        if row[4]:
+                            all_agent_ack_CS.append(row[4])
+                        else:
+                            all_agent_ack_CS.append('0')
+                            print("pas de ack")
+                        all_agent_actions.append(row[5])
+                        all_agent_CS.append(row[6])
+                        all_user_actions.append(row[8])
+                        all_user_CS.append(row[9])
+
+                        #Create lexicons
                         if row[5] not in agent_actions_list:
                             agent_actions_list.append(row[5])
-                            print(row[5])
                         if row[8] not in user_actions_list:
                             user_actions_list.append(row[8])
-                            print(row[8])
                         triple = row[4] + row[5] + row[6]
                         if triple not in agent_triple:
                             agent_triple.append(triple)
@@ -44,6 +69,22 @@ def generate_actions_lexicons():
     file_user.close()
 
     print("Lexicons created")
+
+    #encoding data
+    onehot_encoded_agent_ack_CS = encode(all_agent_ack_CS)
+    onehot_encoded_agent_actions = encode(all_agent_actions)
+    onehot_encoded_agent_CS = encode(all_agent_CS)
+    onehot_encoded_user_actions = encode(all_user_actions)
+    onehot_encoded_user_CS = encode(all_user_CS)
+
+
+def encode(data):
+    label_encoder = LabelEncoder()
+    integer_encoded = label_encoder.fit_transform(data)
+    onehot_encoder = OneHotEncoder(sparse=False)
+    integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
+    onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
+    return onehot_encoded
 
 
 def set_voice_engine(who, voice):

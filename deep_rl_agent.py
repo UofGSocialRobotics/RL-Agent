@@ -27,7 +27,6 @@ class Agent():
         self.model = self.build_DQN_model()
 
     def build_DQN_model(self):
-        # Neural Net for Deep-Q learning Model
         model = Sequential()
         model.add(Dense(24, input_dim=config.DQN_STATE_SPACE, activation='relu'))
         model.add(Dense(12, activation='relu'))
@@ -44,6 +43,29 @@ class Agent():
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
+
+    def pre_train_model(self):
+        while not dst.dialog_done and dst.turns < config.MAX_STEPS:
+            state = copy.deepcopy(dst.state)
+            vectorized_state = dst.vectorize()
+            agent_previous_action = copy.deepcopy(agent_action)
+            user_previous_action = copy.deepcopy(user_action)
+
+            agent_action = agent.next(dst)
+
+            user_action = user.next(agent_action, dst)
+
+            if i > (config.EPISODES - config.EPISODES_THRESHOLD) and config.VERBOSE_TRAINING > 0:
+                print("A: ", agent_action)
+                print("U: ", user_action)
+
+            dst.update_state(agent_action, user_action, agent_previous_action, user_previous_action, user.user_type)
+            reward, task_reward, rapport_reward = dst.compute_reward(state, agent_action, user.number_recos)
+            vectorized_action = agent.vectorize_action(agent_action)
+            agent.remember(vectorized_state, vectorized_action, reward, dst.vectorize(), dst.dialog_done)
+            agent.update_qtables(state, dst.state, agent_action, agent_previous_action, user_action,
+                                 user_previous_action, reward)
+
 
     def vectorize_action(self, action):
         action_vector = [0,0,0,0,0,0,0]

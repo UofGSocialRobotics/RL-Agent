@@ -187,7 +187,7 @@ def rule_based_interactions(agent, user, dst):
 
 
 if __name__ == '__main__':
-    utils.generate_actions_lexicons()
+    utils.preprocess_dialogue_data()
     #main()
 
 
