@@ -9,7 +9,6 @@ import urllib.request
 import json
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
-from keras.utils import to_categorical
 import pickle
 import glob
 
@@ -54,13 +53,14 @@ def unpickle_dialogues(files):
 def preprocess_dialogue_data():
     print("Creating lexicons and NN data... ")
     dialogue_path = config.TRAINING_DIALOGUE_PATH
-    agent_actions_path = config.AGENT_ACTIONS
-    user_actions_path = config.USER_ACTIONS
+    agent_actions_file = config.AGENT_ACTIONS
+    agent_intentions_file = config.AGENT_INTENTIONS
+    slots_file = config.SLOTS
+    user_actions_file = config.USER_ACTIONS
     agent_actions_list = []
     agent_intent_list = []
     slots = []
     user_actions_list = []
-    agent_triple = []
     all_user_types = []
     all_agent_ack_CS = []
     all_agent_actions = []
@@ -84,22 +84,35 @@ def preprocess_dialogue_data():
                             all_agent_ack_CS.append(row[4])
                         else:
                             all_agent_ack_CS.append('0')
-                            print("pas de ack")
                         all_agent_actions.append(row[5])
                         all_agent_CS.append(row[7])
                         all_user_actions.append(row[9])
                         all_user_CS.append(row[10])
 
-                        #Create intention_lexicons
-                        if row[5] not in agent_actions_list:
+                        #Create_lexicons
+                        if row[5] not in agent_intent_list:
                             agent_intent_list.append(row[5])
+                        if row[6] not in slots and row[6] != '':
+                            slots.append(row[6])
+                        if row[9] not in user_actions_list:
+                            user_actions_list.append(row[9])
 
-    file_agent = open(agent_actions_path, "w")
+    file_agent = open(agent_actions_file, "w")
     for action in agent_actions_list:
         file_agent.writelines(action + "\n")
     file_agent.close()
 
-    file_user = open(user_actions_path, "w")
+    file_intents = open(agent_intentions_file, "w")
+    for intent in agent_intent_list:
+        file_intents.writelines(intent + "\n")
+    file_intents.close()
+
+    file_slots = open(slots_file, "w")
+    for slot in slots:
+        file_slots.writelines(slot + "\n")
+    file_slots.close()
+
+    file_user = open(user_actions_file, "w")
     for action in user_actions_list:
         file_user.write(action + "\n")
     file_user.close()

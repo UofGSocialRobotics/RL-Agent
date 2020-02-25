@@ -27,6 +27,9 @@ AGENT_SENTENCES = "./resources/agent/agent_sentence_DB.csv"
 AGENT_ACKS = "./resources/agent/ack_db.csv"
 DM_MODEL = "./resources/agent/model.csv"
 AGENT_ACTIONS = "./resources/agent/agent_actions.lexicon"
+AGENT_INTENTIONS = "./resources/agent/agent_intentions.lexicon"
+SLOTS = "./resources/agent/slots.lexicon"
+SLOTS
 AGENT_VOICE = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_ZIRA_11.0"
 USE_ACKS = True
 
