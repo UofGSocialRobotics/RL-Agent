@@ -10,6 +10,46 @@ import json
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 from keras.utils import to_categorical
+import pickle
+import glob
+
+
+def unpickle_dialogues(files):
+    txt_files = glob.glob(files)
+    cs_SARA_count = 0
+    cs_User_count = 0
+    cs_ack_count = 0
+    cs_count_filename = config.RAW_DIALOGUES_PATH + "cs_count_1.csv"
+    cs_count_file = open(cs_count_filename, "w")
+
+    for file in txt_files:
+        file_tab = file.split("\\")
+        filename = config.TRAINING_DIALOGUE_PATH + file_tab[1] + ".csv"
+        tosave = open(filename, "w")
+        pickle_off = open(file, "rb")
+        emp = pickle.load(pickle_off)
+        for key, value in emp.items():
+            # print(emp)
+            toprint = "1," + file + ",SARA, ack," + emp[key]['SARA']['ack']['cs'] + "," + emp[key]['SARA']['other']['ts'][
+            'intent'] + "," + emp[key]['SARA']['other']['ts']['slot'] + "," + emp[key]['SARA']['other'][
+                      'cs'] + ", USER, " + emp[key]['USER']['ts']['intent'] + "(" + emp[key]['USER']['ts'][
+                      'slot'] + ")" + "," + emp[key]['USER']['cs'] + "\n"
+            tosave.write(toprint)
+            if (emp[key]['SARA']['other']['cs'] != 'NONE'):
+                cs_SARA_count += 1
+            if (emp[key]['SARA']['ack']['cs'] != ''):
+                cs_ack_count += 1
+            if (emp[key]['USER']['cs'] != ''):
+                cs_User_count += 1
+
+        tosave.close()
+        cs_count = str(cs_ack_count) + "," + str(cs_SARA_count) + "," + str(cs_User_count) + "\n"
+        cs_count_file.write(cs_count)
+        cs_SARA_count = 0
+        cs_User_count = 0
+        cs_ack_count = 0
+
+    cs_count_file.close()
 
 def preprocess_dialogue_data():
     print("Creating lexicons and NN data... ")
@@ -17,6 +57,8 @@ def preprocess_dialogue_data():
     agent_actions_path = config.AGENT_ACTIONS
     user_actions_path = config.USER_ACTIONS
     agent_actions_list = []
+    agent_intent_list = []
+    slots = []
     user_actions_list = []
     agent_triple = []
     all_user_types = []
@@ -44,20 +86,14 @@ def preprocess_dialogue_data():
                             all_agent_ack_CS.append('0')
                             print("pas de ack")
                         all_agent_actions.append(row[5])
-                        all_agent_CS.append(row[6])
-                        all_user_actions.append(row[8])
-                        all_user_CS.append(row[9])
+                        all_agent_CS.append(row[7])
+                        all_user_actions.append(row[9])
+                        all_user_CS.append(row[10])
 
-                        #Create lexicons
+                        #Create intention_lexicons
                         if row[5] not in agent_actions_list:
-                            agent_actions_list.append(row[5])
-                        if row[8] not in user_actions_list:
-                            user_actions_list.append(row[8])
-                        triple = row[4] + row[5] + row[6]
-                        if triple not in agent_triple:
-                            agent_triple.append(triple)
+                            agent_intent_list.append(row[5])
 
-    print(len(agent_triple))
     file_agent = open(agent_actions_path, "w")
     for action in agent_actions_list:
         file_agent.writelines(action + "\n")
