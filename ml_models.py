@@ -85,43 +85,6 @@ def build_raw_dataset():
                     dataset.writerow(tmp_row)
                     tmp_row = []
 
-
-def build_count_dataset():
-    rapport_dict, groups_dict = load_rapport_and_groups_dict()
-    with open(config.TRAINING_DIALOGUE_PATH + "count_dataset.csv", mode='w', newline='') as csv_file:
-        dataset = csv.writer(csv_file, delimiter=',')
-        tmp_row = []
-        ack_cs = [0, 0, 0, 0, 0]
-        agent_cs = [0, 0, 0, 0, 0]
-        user_cs = [0, 0, 0, 0, 0]
-        for root, dirs, files in os.walk(config.TRAINING_DIALOGUE_PATH):
-            for name in files:
-                turn = 1
-                if name.endswith(".csv") and "dataset" not in name and "rapport" not in name:
-                    with open(config.TRAINING_DIALOGUE_PATH + name, mode='rt') as csv_file:
-                        interaction = csv.reader(csv_file, delimiter=',')
-                        for row in interaction:
-                            if turn == 1:
-                                tmp_row.append(row[1].replace("_full_dialog.pkl", ""))
-                                tmp_row.append(rapport_dict[row[1].replace("_full_dialog.pkl", "")])
-                                group = groups_dict[row[1].replace("_full_dialog.pkl", "")]
-                                if group in '1' or group in '2' or group in '3':
-                                    tmp_row.append(0)
-                                else:
-                                    tmp_row.append(1)
-                            ack_cs = count(row[4], ack_cs)
-                            agent_cs = count(row[6], agent_cs)
-                            user_cs = count(row[9], user_cs)
-                            turn += 1
-                    tmp_row.extend(ack_cs)
-                    tmp_row.extend(user_cs)
-                    tmp_row.extend(agent_cs)
-                    dataset.writerow(tmp_row)
-                    tmp_row = []
-                    ack_cs = [0, 0, 0, 0, 0]
-                    agent_cs = [0, 0, 0, 0, 0]
-                    user_cs = [0, 0, 0, 0, 0]
-
 def build_reciprocity_dataset():
     rapport_dict, groups_dict = load_rapport_and_groups_dict()
     with open(config.TRAINING_DIALOGUE_PATH + "reciprocity_dataset.csv", mode='w', newline='') as csv_file:
@@ -132,24 +95,22 @@ def build_reciprocity_dataset():
         for root, dirs, files in os.walk(config.TRAINING_DIALOGUE_PATH):
             for name in files:
                 turn = 1
-                if name.endswith(".csv") and "dataset" not in name and "rapport" not in name:
+                if name.endswith(".pkl.csv"):
                     with open(config.TRAINING_DIALOGUE_PATH + name, mode='rt') as csv_file:
                         interaction = csv.reader(csv_file, delimiter=',')
                         for row in interaction:
                             if turn == 1:
                                 tmp_row.append(row[1].replace("_full_dialog.pkl", ""))
-                                tmp_row.append(rapport_dict[row[1].replace("_full_dialog.pkl", "")])
-                                group = groups_dict[row[1].replace("_full_dialog.pkl", "")]
-                                if group in '1' or group in '2' or group in '3':
-                                    tmp_row.append(0)
-                                else:
-                                    tmp_row.append(1)
-                                user_strat = row[9]
+                                dialogue_name = row[1].replace("_full_dialog.pkl", "").split("\\")
+                                tmp_row.append(rapport_dict[dialogue_name[1]])
                             else:
-                                if "NONE" not in user_strat:
+                                # Check which CS the agent used as an ack to reciprocate user non NONE CS
+                                if "NONE" not in user_cs:
                                     rec_agent = increment_agent_rec(row[4], rec_agent)
-                            if "NONE" not in row[9]:
-                                rec_user = count(row[6], rec_user)
+                            user_cs = row[10]
+                            # Check which CS from the agent was reciprocated by a non NONE CS from the user side
+                            if "NONE" not in row[10]:
+                                rec_user = count(row[7], rec_user)
                             turn += 1
                     tmp_row.extend(rec_user)
                     tmp_row.extend(rec_agent)
@@ -187,25 +148,6 @@ def vectorize(cs):
         vector = [0]
     return vector
 
-
-def one_hot_vectorize(cs):
-    if "NONE" in cs:
-        vector = [1, 0, 0, 0, 0]
-    elif "HE" in cs:
-        vector = [0, 1, 0, 0, 0]
-    elif "SD" in cs:
-        vector = [0, 0, 1, 0, 0]
-    elif "PR" in cs:
-        vector = [0, 0, 0, 1, 0]
-    elif "VSN" in cs:
-        vector = [0, 0, 0, 0, 1]
-    elif "blank" in cs:
-        vector = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    else:
-        vector = [0, 0, 0, 0, 0]
-    return vector
-
-
 def increment_agent_rec(cs, list):
     if "NONE" in cs:
         list[1] += 1
@@ -219,16 +161,16 @@ def increment_agent_rec(cs, list):
         list[0] += 1
     return list
 
-def count(cs, list):
-    if "NONE" in cs:
+def count(agent_cs, list):
+    if "NONE" in agent_cs:
         list[0] += 1
-    elif "HE" in cs:
+    elif "HE" in agent_cs:
         list[1] += 1
-    elif "SD" in cs:
+    elif "SD" in agent_cs:
         list[2] += 1
-    elif "PR" in cs:
+    elif "PR" in agent_cs:
         list[3] += 1
-    elif "VSN" in cs:
+    elif "VSN" in agent_cs:
         list[4] += 1
     return list
 
@@ -251,19 +193,19 @@ def compute_reg_scores(regressors_list, X_train, X_test, y_train, y_test):
     for name, reg in regressors_list.items():
         if name == 'Lin' or name == 'Las' or name == 'Rid' or name in 'MLP':
             grid_values = {}
-        #elif name in 'MLP':
-        #    grid_values = [{'learning_rate': ["constant", "invscaling", "adaptive"],
-                            #            'max_iter': [200, 500, 800, 1000, 1500],
-                            #            'hidden_layer_sizes': [(10), (10,2), (5,), (5,2), (9,), (9,2)],
-        #                    'alpha': [0.0001, 1e-5, 0.01, 0.001],
-        #                    'solver': ['lbfgs', 'sgd', 'adam'],
-        #                    'learning_rate_init': [0.001, 0.01, 0.1, 0.2, 0.3],
-        #                    'activation': ["logistic", "relu", "tanh"]}]
+        elif name in 'MLP':
+            grid_values = [{'learning_rate': ["constant", "invscaling", "adaptive"],
+                                        'max_iter': [200, 500, 800, 1000, 1500],
+                                        'hidden_layer_sizes': [(10), (10,2), (5,), (5,2), (9,), (9,2)],
+                            'alpha': [0.0001, 1e-5, 0.01, 0.001],
+                            'solver': ['lbfgs', 'sgd', 'adam'],
+                            'learning_rate_init': [0.001, 0.01, 0.1, 0.2, 0.3],
+                            'activation': ["logistic", "relu", "tanh"]}]
 
         results = GridSearchCV(reg, param_grid=grid_values, cv=5, iid=False, scoring='neg_mean_squared_error')
         results.fit(X_train, y_train)
-        # if name in 'MLP':
-        # print(name + ": " + str(results.best_estimator_.hidden_layer_sizes))
+        if name in 'MLP':
+            print(name + ": " + str(results.best_estimator_.hidden_layer_sizes))
         y_pred = results.best_estimator_.predict(X_test)
         print(name + ' Mean Absolute Error: ' + str(metrics.mean_absolute_error(y_test, y_pred)))
         print(name + ' Mean Squared Error: ' + str(metrics.mean_squared_error(y_test, y_pred)))
@@ -408,11 +350,11 @@ def estimate_rapport(data):
     result = loaded_model.predict(data)
     return result
 
-def get_rapport_reward(rapport_score, none_ratio, user_type):
-    if "P" in user_type:
-        reward = none_ratio *100
-    else:
-        reward = (rapport_score/7) * 100
+def get_rapport_reward(rapport_score, none_ratio):
+    #if "P" in user_type:
+    #    reward = none_ratio *100
+    #else:
+    reward = (rapport_score/7) * 100
     return reward
 
 if __name__ == '__main__':

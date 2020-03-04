@@ -52,27 +52,31 @@ class Agent():
                         node.add(line_input[i])
                 self.nodes[node.stateName] = node
 
-    def next(self, user_action):
-        self.user_action = user_action
-        # Store entities (actors,directors, genres) in the user frame
-        if self.store_pref and "inform" in self.user_action['intent']:
-            if '+' in self.user_action['polarity']:
-                if 'cast' in self.user_action['entity_type']:
-                    self.user_model["liked_cast"].append(self.user_action['entity'])
-                elif 'genre' in self.user_action['entity_type']:
-                    self.user_model["liked_genres"].append(self.user_action['entity'])
-            elif '-' in self.user_action['polarity']:
-                if 'cast' in self.user_action['entity_type']:
-                    self.user_model["disliked_cast"].append(self.user_action['entity'])
-                elif 'genre' in self.user_action['entity_type']:
-                    self.user_model["disliked_genre"].append(self.user_action['entity'])
+    def next(self, state):
+        self.user_action = state.state['current_user_action']
 
-        next_state = self.nodes.get(self.currState).get_action(self.user_action['intent'])
+        if state.turns == 0:
+            next_state = 'greeting()'
+        else:
+            next_state = self.nodes.get(self.currState).get_action(self.user_action['intent'])
+
+            # Store entities (actors,directors, genres) in the user frame
+            if self.store_pref and "inform" in self.user_action['intent']:
+                if '+' in self.user_action['polarity']:
+                    if 'cast' in self.user_action['entity_type'] or 'actor' in self.user_action['entity_type']:
+                        self.user_model["liked_cast"].append(self.user_action['entity'])
+                    elif 'genre' in self.user_action['entity_type']:
+                        self.user_model["liked_genres"].append(self.user_action['entity'])
+                elif '-' in self.user_action['polarity']:
+                    if 'cast' in self.user_action['entity_type']:
+                        self.user_model["disliked_cast"].append(self.user_action['entity'])
+                    elif 'genre' in self.user_action['entity_type']:
+                        self.user_model["disliked_genre"].append(self.user_action['entity'])
 
         if self.currState in ("inform(movie)", "inform(plot)", "inform(actor)", "inform(genre)"):
-            if "yes" in self.user_action['intent']:
+            if "affirm" in self.user_action['intent']:
                 self.user_model['liked_movies'].append(self.movie['title'])
-            elif any(s in self.user_action['intent'] for s in ('request(more)', 'inform(watched)', 'no')):
+            elif any(s in self.user_action['intent'] for s in ('request(more)', 'inform(watched)', 'negate')):
                 self.user_model['disliked_movies'].append(self.movie['title'])
 
         # Todo: Uncomment if real recommendations are needed.
@@ -93,7 +97,8 @@ class Agent():
         return new_msg
 
     def msg_to_json(self, intention, movie, ack_cs, cs):
-        frame = {'intent': intention, 'movie': movie, 'ack_cs': ack_cs, 'cs': cs}
+        intent, entity_type = utils.parse_intention(intention)
+        frame = {'intent': intent, 'entity_type': entity_type, 'movie': movie, 'ack_cs': ack_cs, 'cs': cs}
         return frame
 
     def recommend(self):

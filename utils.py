@@ -22,6 +22,7 @@ def unpickle_dialogues(files):
     cs_count_file = open(cs_count_filename, "w")
 
     for file in txt_files:
+        dialog_done = False
         file_tab = file.split("\\")
         filename = config.TRAINING_DIALOGUE_PATH + file_tab[1] + ".csv"
         tosave = open(filename, "w")
@@ -29,17 +30,22 @@ def unpickle_dialogues(files):
         emp = pickle.load(pickle_off)
         for key, value in emp.items():
             # print(emp)
-            toprint = "1," + file + ",SARA, ack," + emp[key]['SARA']['ack']['cs'] + "," + emp[key]['SARA']['other']['ts'][
+            id_tab = file.split('\\')
+            id_tab2 = id_tab[1].split('_')
+            if not dialog_done:
+                toprint = "1," + id_tab2[0] + ",SARA, ack," + emp[key]['SARA']['ack']['cs'] + "," + emp[key]['SARA']['other']['ts'][
             'intent'] + "," + emp[key]['SARA']['other']['ts']['slot'] + "," + emp[key]['SARA']['other'][
-                      'cs'] + ", USER, " + emp[key]['USER']['ts']['intent'] + "(" + emp[key]['USER']['ts'][
-                      'slot'] + ")" + "," + emp[key]['USER']['cs'] + "\n"
-            tosave.write(toprint)
-            if (emp[key]['SARA']['other']['cs'] != 'NONE'):
-                cs_SARA_count += 1
-            if (emp[key]['SARA']['ack']['cs'] != ''):
-                cs_ack_count += 1
-            if (emp[key]['USER']['cs'] != ''):
-                cs_User_count += 1
+                      'cs'] + ", USER, " + emp[key]['USER']['ts']['intent'] + "," + emp[key]['USER']['ts'][
+                      'slot'] + "," + emp[key]['USER']['cs'] + "\n"
+                tosave.write(toprint)
+                if (emp[key]['SARA']['other']['cs'] != 'NONE'):
+                    cs_SARA_count += 1
+                if (emp[key]['SARA']['ack']['cs'] != ''):
+                    cs_ack_count += 1
+                if (emp[key]['USER']['cs'] != ''):
+                    cs_User_count += 1
+                if  'bye' in emp[key]['USER']['ts']['intent']:
+                    dialog_done = True
 
         tosave.close()
         cs_count = str(cs_ack_count) + "," + str(cs_SARA_count) + "," + str(cs_User_count) + "\n"
@@ -135,6 +141,11 @@ def encode(data):
     onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
     return onehot_encoded
 
+def parse_intention(intent):
+    tab = intent.split('(')
+    intention =  tab[0]
+    entity_type = tab[1].replace(')','')
+    return intention, entity_type
 
 def set_voice_engine(who, voice):
     if "U" in who:

@@ -8,6 +8,7 @@ USER_LIST_DIRECTORS = "./resources/user/user_model/director2id.lexicon"
 USER_ACTIONS = "./resources/user/user_actions.lexicon"
 USER_SENTENCES = "./resources/user/user_sentence_DB.csv"
 USER_VOICE = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN - US_DAVID_11.0"
+USER_ACTION = {'intent': '', 'cs': '', 'entity': '', 'entity_type': '', 'polarity': ''}
 
 # Todo Learn Probas from data
 PROBA_NO_ACTOR = [0.2, 0.8]
@@ -29,9 +30,10 @@ DM_MODEL = "./resources/agent/model.csv"
 AGENT_ACTIONS = "./resources/agent/agent_actions.lexicon"
 AGENT_INTENTIONS = "./resources/agent/agent_intentions.lexicon"
 SLOTS = "./resources/agent/slots.lexicon"
-SLOTS
+AGENT_ACTION = {'intent': '', 'entity_type': '', 'movie': {}, 'ack_cs': '', 'cs': ''}
 AGENT_VOICE = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_ZIRA_11.0"
 USE_ACKS = True
+
 
 # Other
 MOVIEDB_KEY = "6e3c2d4a2501c86cd7e0571ada291f55"
@@ -54,6 +56,7 @@ RECO_ACCEPTANCE_MODEL = "./resources/reco_acceptance_model.pkl"
 RECO_ACCEPTANCE_DATASET = "./resources/user/fake_task_data.csv"
 TASK_QTABLE = "./resources/agent/task_qtable.csv"
 SOCIAL_QTABLE = "./resources/agent/social_qtable.csv"
+RAPPORT_GROUPS = "./resources/training_dialogues/rapport_groups.csv"
 
 
 # Training Related
@@ -62,7 +65,7 @@ DQN_ACTION_SPACE = [0,0,0,0,0,0,0]
 BATCH_SIZE = 32
 EPISODES = 10000
 # Number of iterations
-MAX_STEPS = 20  # Maximum steps per episode
+MAX_STEPS = 30  # Maximum steps per episode
 EPISODES_THRESHOLD = 100
 VERBOSE_TRAINING = 0 #0 = nothing printed; 1 = reward only; 2 = more
 

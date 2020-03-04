@@ -24,7 +24,7 @@ class Agent():
         self.exploration_rate = config.EPSILON
         self.exploration_min = config.EPSILON_MIN
         self.exploration_decay = config.EPSILON_DECAY
-        self.model = self.build_DQN_model()
+        #self.model = self.build_DQN_model()
 
     def build_DQN_model(self):
         model = Sequential()
