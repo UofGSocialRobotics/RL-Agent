@@ -1,8 +1,10 @@
 import os
 import random
+import utils
 from collections import deque
 import config
 import pandas
+import csv
 import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense
@@ -16,8 +18,7 @@ class Agent():
         self.memory = deque(maxlen=2000)
 
         self.actions = config.AGENT_ACTIONS
-        self.social_qtable = pandas.DataFrame(0, index=[], columns=config.CS_LABELS)
-        self.ack_qtable = pandas.DataFrame(0, index=[], columns=config.CS_LABELS)
+        self.action_encoder = None
 
         self.learning_rate = config.LEARNING_RATE
         self.gamma = config.GAMMA
@@ -44,68 +45,6 @@ class Agent():
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 
-    def pre_train_model(self):
-        while not dst.dialog_done and dst.turns < config.MAX_STEPS:
-            state = copy.deepcopy(dst.state)
-            vectorized_state = dst.vectorize()
-            agent_previous_action = copy.deepcopy(agent_action)
-            user_previous_action = copy.deepcopy(user_action)
-
-            agent_action = agent.next(dst)
-
-            user_action = user.next(agent_action, dst)
-
-            if i > (config.EPISODES - config.EPISODES_THRESHOLD) and config.VERBOSE_TRAINING > 0:
-                print("A: ", agent_action)
-                print("U: ", user_action)
-
-            dst.update_state(agent_action, user_action, agent_previous_action, user_previous_action, user.user_type)
-            reward, task_reward, rapport_reward = dst.compute_reward(state, agent_action, user.number_recos)
-            vectorized_action = agent.vectorize_action(agent_action)
-            agent.remember(vectorized_state, vectorized_action, reward, dst.vectorize(), dst.dialog_done)
-            agent.update_qtables(state, dst.state, agent_action, agent_previous_action, user_action,
-                                 user_previous_action, reward)
-
-
-    def vectorize_action(self, action):
-        action_vector = [0,0,0,0,0,0,0]
-        if "greeting" in action:
-            action_vector[0] = 1
-        if "request(last_movie)" in action:
-            action_vector[1] = 1
-        if "request(cast)" in action:
-            action_vector[2] = 1
-        if "request(crew)" in action:
-            action_vector[3] = 1
-        if "request(genre)" in action:
-            action_vector[4] = 1
-        if "inform(movie)" in action:
-            action_vector[5] = 1
-        if "goodbye" in action:
-            action_vector[6] = 1
-        action_vector = np.asarray(action_vector)
-        action_vector = action_vector[np.newaxis, :]
-        return action_vector
-
-    def devectorize_action(self, action):
-        action_vector = [0,0,0,0,0,0,0]
-        if action == 0:
-            action_name = "greeting"
-        if action == 1:
-            action_name = "request(last_movie)"
-        if action == 2:
-            action_name = "request(cast)"
-        if action == 3:
-            action_name = "request(crew)"
-        if action == 4:
-            action_name = "request(genre)"
-        if action == 5:
-            action_name = "inform(movie)"
-        if action == 6:
-            action_name = "goodbye"
-        return action_name
-
-
     def replay(self, sample_batch_size):
         if len(self.memory) < sample_batch_size:
             return
@@ -119,6 +58,15 @@ class Agent():
             self.model.fit(state, target_f, epochs=1, verbose=0)
         if self.exploration_rate > self.exploration_min:
             self.exploration_rate *= self.exploration_decay
+
+    def get_action_space_encoder(self):
+        action_space = []
+        with open(config.AGENT_ACTION_SPACE, mode='rt') as csv_file:
+            interaction = csv.reader(csv_file, delimiter=',')
+            for row in interaction:
+                action_space.append(row)
+        action_encoder = utils.encode(action_space)
+        return action_encoder
 
     def next(self, state):
         if random.uniform(0, 1) > config.EPSILON:
@@ -141,34 +89,3 @@ class Agent():
     def pick_cs(self):
         agent_cs = random.choice(config.CS_LABELS)
         return agent_cs
-
-    def pick_best_cs(self, state, user_action):
-        cs_row = []
-        cs_row.append(state["user_social_type"])
-        cs_row.append(user_action["cs"])
-        current_state = self.social_qtable.loc[str(cs_row)]
-        agent_cs = current_state.idxmax()
-        return agent_cs
-
-    def update_qtables(self, prev_state, current_state, agent_action, agent_previous_action, user_action, user_previous_action, reward):
-
-        previous_cs_row = []
-        previous_cs_row.append(current_state["user_social_type"])
-        previous_cs_row.append(user_previous_action["cs"])
-        cs_row = []
-        cs_row.append(current_state["user_social_type"])
-        cs_row.append(user_action["cs"])
-            # update social qtable
-        if str(previous_cs_row) in self.social_qtable.index:
-            if str(cs_row) not in self.social_qtable.index:
-                self.social_qtable.loc[str(cs_row)] = 0
-            self.social_qtable.at[str(previous_cs_row), agent_action['cs']] = (1 - self.learning_rate) * self.social_qtable.at[
-                str(previous_cs_row), agent_action['cs']] + self.learning_rate * (reward + self.gamma * np.max(
-                self.social_qtable.loc[str(cs_row), :]))
-        else:
-            self.social_qtable.loc[str(previous_cs_row)] = 0
-            if str(cs_row) not in self.social_qtable.index:
-                self.social_qtable.loc[str(cs_row)] = 0
-            self.social_qtable.at[str(previous_cs_row), agent_action['cs']] = (1 - self.learning_rate) * self.social_qtable.at[
-                str(previous_cs_row), agent_action['cs']] + self.learning_rate * (reward + self.gamma * np.max(
-                self.social_qtable.loc[str(cs_row), :]))

@@ -6,6 +6,7 @@ USER_LIST_ACTORS = "./resources/user/user_model/actor2id.lexicon"
 USER_LIST_GENRES = "./resources/user/user_model/genre2id.lexicon"
 USER_LIST_DIRECTORS = "./resources/user/user_model/director2id.lexicon"
 USER_ACTIONS = "./resources/user/user_actions.lexicon"
+USER_ACTION_SPACE = "./resources/user/user_action_space.csv"
 USER_SENTENCES = "./resources/user/user_sentence_DB.csv"
 USER_VOICE = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN - US_DAVID_11.0"
 USER_ACTION = {'intent': '', 'cs': '', 'entity': '', 'entity_type': '', 'polarity': ''}
@@ -17,7 +18,7 @@ PROBA_NO_GENRE = [0.2, 0.8]
 # Todo Make sure it matches with actual actions
 ITEMS_REQUEST_AFTER_MOVIE = ['yes', 'no', 'request(genre)', 'request(actor)', 'request(plot)', 'request(another)', 'inform(watched)']
 PROBA_REQUEST_AFTER_MOVIE = [0.15, 0.1, 0.1, 0.1, 0.2, 0.2, 0.15]
-PROBA_NUMBER_MOVIES = [0.2, 0.2, 0.15, 0.15, 0.15, 0.15]
+PROBA_NUMBER_MOVIES = [0.33, 0.34, 0.33]
 ITEMS_USER_TYPE = ["P", "I"]
 PROBA_USER_TYPE = [0.641, 0.359]
 ITEMS_USER_RECO_PREF = ["Nov", "Sim"]
@@ -31,6 +32,7 @@ AGENT_ACTIONS = "./resources/agent/agent_actions.lexicon"
 AGENT_INTENTIONS = "./resources/agent/agent_intentions.lexicon"
 SLOTS = "./resources/agent/slots.lexicon"
 AGENT_ACTION = {'intent': '', 'entity_type': '', 'movie': {}, 'ack_cs': '', 'cs': ''}
+AGENT_ACTION_SPACE = "./resources/agent/action_space.csv"
 AGENT_VOICE = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_ZIRA_11.0"
 USE_ACKS = True
 

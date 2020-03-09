@@ -1,3 +1,4 @@
+import csv
 import random
 import numpy
 import config
@@ -48,12 +49,10 @@ class UserSimulator():
         self.movie_agenda = list(config.ITEMS_REQUEST_AFTER_MOVIE)
         self.movie_agenda_probas = list(config.PROBA_REQUEST_AFTER_MOVIE)
 
-        #self.list_actions = []
-
         #self.load_actions_lexicon(config.USER_ACTIONS)
 
     def set_number_recos(self):
-        self.number_recos = numpy.random.choice(numpy.arange(1, 7), p=config.PROBA_NUMBER_MOVIES)
+        self.number_recos = numpy.random.choice(numpy.arange(1, 4), p=config.PROBA_NUMBER_MOVIES)
 
     def set_type(self):
         # The prior probabilities for a user being I-Type
@@ -285,6 +284,15 @@ class UserSimulator():
                     user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
 
         return user_intention
+
+    def get_action_encoder(self):
+        action_space = []
+        with open(config.USER_ACTION_SPACE, mode='rt') as csv_file:
+            interaction = csv.reader(csv_file, delimiter=',')
+            for row in interaction:
+                action_space.append(row)
+        action_encoder = utils.encode(action_space)
+        return action_encoder
 
     def msg_to_json(self, intent, cs, entity, entity_type, polarity):
         frame = {'intent': intent, 'cs': cs, 'entity': entity, 'entity_type': entity_type, 'polarity': polarity}

@@ -56,11 +56,21 @@ def unpickle_dialogues(files):
 
     cs_count_file.close()
 
+def transform_agent_action(action_dict):
+    action = action_dict['ack_cs'] + "_" + action_dict['intent'] + "_" + action_dict['cs']
+    return action
+
+def transform_user_action(action_dict):
+    action = action_dict['intent'] + "_" + action_dict['entity_type'] + "_" + action_dict['cs']
+    return action
+
 def preprocess_dialogue_data():
     print("Creating lexicons and NN data... ")
     dialogue_path = config.TRAINING_DIALOGUE_PATH
     agent_actions_file = config.AGENT_ACTIONS
     agent_intentions_file = config.AGENT_INTENTIONS
+    agent_action_space = config.AGENT_ACTION_SPACE
+    user_action_space = config.USER_ACTION_SPACE
     slots_file = config.SLOTS
     user_actions_file = config.USER_ACTIONS
     agent_actions_list = []
@@ -73,6 +83,13 @@ def preprocess_dialogue_data():
     all_agent_CS = []
     all_user_actions = []
     all_user_CS = []
+
+    triple = ""
+    triple_list = []
+    user_triple = ""
+    user_triple_list = []
+    ack_cs_lexicon = []
+    cs_lexicon = []
 
     processed_dialogues = []
     dialogue_step = {'State':[], 'Action':[], 'Reward':0, 'Next_State':[], 'Done':False}
@@ -93,7 +110,7 @@ def preprocess_dialogue_data():
                         all_agent_actions.append(row[5])
                         all_agent_CS.append(row[7])
                         all_user_actions.append(row[9])
-                        all_user_CS.append(row[10])
+                        all_user_CS.append(row[11])
 
                         #Create_lexicons
                         if row[5] not in agent_intent_list:
@@ -102,6 +119,19 @@ def preprocess_dialogue_data():
                             slots.append(row[6])
                         if row[9] not in user_actions_list:
                             user_actions_list.append(row[9])
+                        triple = [row[4]] + [row[5]] + [row[7]]
+                        if triple not in triple_list:
+                            print(triple)
+                            triple_list.append(triple)
+                        triple = []
+                        user_triple = row[9] + "_" + row[10]
+                        if user_triple not in user_triple_list:
+                            user_triple_list.append(user_triple)
+                        user_triple = ""
+                        if row[4] not in ack_cs_lexicon:
+                            ack_cs_lexicon.append(row[4])
+                        if row[7] not in cs_lexicon:
+                            cs_lexicon.append(row[7])
 
     file_agent = open(agent_actions_file, "w")
     for action in agent_actions_list:
@@ -123,23 +153,33 @@ def preprocess_dialogue_data():
         file_user.write(action + "\n")
     file_user.close()
 
+    file_action_space = open(agent_action_space, "w")
+    file_action_space.writelines("[,,]" + "\n")
+    for action in triple_list:
+        file_action_space.write(str(action) + "\n")
+    file_action_space.close()
+
+    file_user_action_space = open(user_action_space, "w")
+    file_user_action_space.writelines("__" + "\n")
+    for action in user_triple_list:
+        for cs in ["HE","PR","SD","QESD","NONE"]:
+            tmp_action = action + "_" + cs
+            file_user_action_space.write(tmp_action + "\n")
+            tmp_action = ""
+    file_user_action_space.close()
+
     print("Lexicons created")
 
-    #encoding data
-    onehot_encoded_agent_ack_CS = encode(all_agent_ack_CS)
-    onehot_encoded_agent_actions = encode(all_agent_actions)
-    onehot_encoded_agent_CS = encode(all_agent_CS)
-    onehot_encoded_user_actions = encode(all_user_actions)
-    onehot_encoded_user_CS = encode(all_user_CS)
-
-
 def encode(data):
-    label_encoder = LabelEncoder()
-    integer_encoded = label_encoder.fit_transform(data)
-    onehot_encoder = OneHotEncoder(sparse=False)
-    integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
-    onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
-    return onehot_encoded
+    #label_encoder = LabelEncoder()
+    #integer_encoded = label_encoder.fit_transform(data)
+    #onehot_encoder = OneHotEncoder(sparse=False)
+    #integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
+    #onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
+    #return onehot_encoder
+
+    enc = OneHotEncoder()
+    return enc.fit(data)
 
 def parse_intention(intent):
     tab = intent.split('(')
