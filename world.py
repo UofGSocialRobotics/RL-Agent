@@ -22,9 +22,9 @@ def main():
     fig, subplots = plt.subplots(1, 3, sharex=True, sharey=True)
 
     print("Start")
-    pretrain_rewards, pretrain_task_rewards, pretrain_social_rewards = pretrain(agent_deep_rl, user, dst)
-    #rl_agent_rewards, rl_task_rewards, rl_social_rewards = deep_rl_training(agent_deep_rl, user, dst)
-    #print("Deep RL training done")
+    #pretrain_rewards, pretrain_task_rewards, pretrain_social_rewards = pretrain(agent_deep_rl, user, dst)
+    rl_agent_rewards, rl_task_rewards, rl_social_rewards = deep_rl_training(agent_deep_rl, user, dst)
+    print("Deep RL training done")
     rule_based_rewards, rule_based_task_rewards, rule_based_social_rewards = rule_based_interactions(agent_rule_based, user, dst)
     print("Rule based interactions done")
     utils.plotting_rewards("Total Rewards", pretrain_rewards, rule_based_rewards, subplots, 0)
@@ -41,7 +41,7 @@ def initialize(user,dst):
     user_action = config.USER_ACTION
     return agent_action, user_action
 
-def pretrain(agent, user, state):
+def pretrain(agent, user, state,sample_batch_size):
     print("Pretraining using data ")
     dialogue_path = config.TRAINING_DIALOGUE_PATH
     list_rewards = []
@@ -63,38 +63,28 @@ def pretrain(agent, user, state):
                     interaction = csv.reader(csv_file, delimiter=',')
                     user_current_action = config.USER_ACTION
                     agent_current_action = config.AGENT_ACTION
+                    vectorized_state = state.encode_state(action_encoder,user_action_encoder)
                     for row in interaction:
+
                         agent_previous_action = copy.deepcopy(agent_current_action)
+                        user_previous_action = copy.deepcopy(user_current_action)
+                        vectorized_previous_state = copy.deepcopy(vectorized_state)
+
                         agent_current_action['ack_cs'] = row[4]
                         agent_current_action['intent'] = row[5]
                         agent_current_action['entity_type'] = row[6]
                         agent_current_action['cs'] = row[7]
-                        user_previous_action = copy.deepcopy(user_current_action)
+
                         user_current_action['intent'] = row[9]
                         user_current_action['entity_type'] = row[10]
                         user_current_action['cs'] = row[11]
-                        previous_state = copy.deepcopy(state)
                         state.update_state(agent_current_action, user_current_action, agent_previous_action, user_previous_action)
                         total_reward, task_reward, social_reward = compute_reward(state)
                         total_rewards += total_reward
                         task_rewards += task_reward
                         social_rewards += social_reward
-                        # Encoding Agent actions
-                        vectorized_action = utils.transform_agent_action(agent_current_action)
-                        vectorized_action = action_encoder.transform(numpy.array([vectorized_action]).reshape(-1,1))
-                        vectorized_previous_action = utils.transform_agent_action(agent_previous_action)
-                        vectorized_previous_action = action_encoder.transform(numpy.array([vectorized_previous_action]).reshape(-1, 1))
 
-                        # Encoding User actions
-                        vectorized_user_action = utils.transform_user_action(user_current_action)
-                        vectorized_user_action = user_action_encoder.transform(numpy.array([vectorized_user_action]).reshape(-1,1))
-                        vectorized_previous_user_action = utils.transform_user_action(user_previous_action)
-                        vectorized_previous_user_action = user_action_encoder.transform(numpy.array([vectorized_previous_user_action]).reshape(-1, 1))
-
-                        # todo: Vectorize state space
-
-                        vectorized_state = vectorized_previous_action.toarray() + vectorized_previous_user_action.toarray() + vectorized_action.toarray() + vectorized_user_action.toarray()
-                        vectorized_previous_state = sum([vectorized_previous_action, vectorized_previous_user_action, vectorized_action,vectorized_user_action], [])
+                        vectorized_action, vectorized_state = state.encode_state(action_encoder, user_action_encoder)
                         agent.remember(vectorized_state, vectorized_action, total_rewards, vectorized_previous_state, state.dialog_done)
 
                     list_rewards.append(total_rewards)
@@ -102,7 +92,9 @@ def pretrain(agent, user, state):
                     social_reward = rapport_scores.loc[rapport_scores['id'].isin([row[1]])]
                     list_social_rewards.append((social_reward.iloc[0,2]/7)*100)
                     state.set_initial_state()
+    agent.replay(sample_batch_size)
     print("Pretraining done ")
+
     return list_rewards, list_task_rewards, list_social_rewards
 
 
@@ -121,11 +113,12 @@ def deep_rl_training(agent,user,dst):
     total_task_reward = 0
     total_social_reward = 0
     epsilon = config.EPSILON
-    agent_reward_list = []  # list of rewards for the rl_agent across config.EPISODES episodes
+    # list of rewards for the rl_agent across config.EPISODES episodes
+    agent_reward_list = []
     agent_task_reward_list = []
     agent_social_reward_list = []
 
-    pretrain(agent, user, dst)
+    pretrain(agent, user, dst, sample_batch_size)
 
     for i in range(0, config.EPISODES):
         print("Tour " + str(i))
@@ -149,8 +142,6 @@ def deep_rl_training(agent,user,dst):
             reward, task_reward, rapport_reward = dst.compute_reward(state, agent_action, user.number_recos)
             vectorized_action = agent.vectorize_action(agent_action)
             agent.remember(vectorized_state, vectorized_action, reward, dst.vectorize(), dst.dialog_done)
-            agent.update_qtables(state, dst.state, agent_action, agent_previous_action, user_action,
-                                 user_previous_action, reward)
 
         agent.replay(sample_batch_size)
         agent_reward_list, total_reward_agent = queue_rewards_for_plotting(i, agent_reward_list, total_reward_agent,
@@ -165,9 +156,6 @@ def deep_rl_training(agent,user,dst):
 
     agent.save_model()
     print("epsilon", str(epsilon))
-    #print(agent.task_qtable)
-    #agent.task_qtable.to_csv(config.TASK_QTABLE, encoding='utf-8')
-    #agent.social_qtable.to_csv(config.SOCIAL_QTABLE, encoding='utf-8')
 
     return agent_reward_list, agent_task_reward_list, agent_social_reward_list
 
@@ -242,7 +230,7 @@ def compute_reward(state):
 if __name__ == '__main__':
     #utils.unpickle_dialogues(config.RAW_DIALOGUES_PATH + "*_full_dialog.pkl")
     #ml_models.build_reciprocity_dataset()
-    utils.preprocess_dialogue_data()
+    #utils.preprocess_dialogue_data()
     main()
 
 

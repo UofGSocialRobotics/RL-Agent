@@ -3,7 +3,6 @@ import random
 import utils
 from collections import deque
 import config
-import pandas
 import csv
 import numpy as np
 from keras.models import Sequential
@@ -25,11 +24,12 @@ class Agent():
         self.exploration_rate = config.EPSILON
         self.exploration_min = config.EPSILON_MIN
         self.exploration_decay = config.EPSILON_DECAY
+        self.model = None
         #self.model = self.build_DQN_model()
 
     def build_DQN_model(self):
         model = Sequential()
-        model.add(Dense(24, input_dim=config.DQN_STATE_SPACE, activation='relu'))
+        model.add(Dense(24, input_dim=len(config.DQN_STATE_SPACE), activation='relu'))
         model.add(Dense(12, activation='relu'))
         model.add(Dense(len(self.actions), activation='softmax'))
         model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=self.learning_rate))
@@ -66,6 +66,7 @@ class Agent():
             for row in interaction:
                 action_space.append(row)
         action_encoder = utils.encode(action_space)
+        print(action_encoder)
         return action_encoder
 
     def next(self, state):

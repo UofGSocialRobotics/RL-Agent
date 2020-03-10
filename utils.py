@@ -11,6 +11,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 import pickle
 import glob
+import numpy
 
 
 def unpickle_dialogues(files):
@@ -57,12 +58,18 @@ def unpickle_dialogues(files):
     cs_count_file.close()
 
 def transform_agent_action(action_dict):
-    action = action_dict['ack_cs'] + "_" + action_dict['intent'] + "_" + action_dict['cs']
-    return action
+    action = []
+    action.append(action_dict['ack_cs'])
+    action.append(action_dict['intent'])
+    action.append(action_dict['cs'])
+    return numpy.array(action).reshape(1, -1)
 
 def transform_user_action(action_dict):
-    action = action_dict['intent'] + "_" + action_dict['entity_type'] + "_" + action_dict['cs']
-    return action
+    action = []
+    action.append(action_dict['intent'])
+    action.append(action_dict['entity_type'])
+    action.append(action_dict['cs'])
+    return numpy.array(action).reshape(1, -1)
 
 def preprocess_dialogue_data():
     print("Creating lexicons and NN data... ")
@@ -119,15 +126,12 @@ def preprocess_dialogue_data():
                             slots.append(row[6])
                         if row[9] not in user_actions_list:
                             user_actions_list.append(row[9])
-                        triple = [row[4]] + [row[5]] + [row[7]]
+                        triple = str(row[4]) + "," + str(row[5]) + "," + str(row[7])
                         if triple not in triple_list:
-                            print(triple)
                             triple_list.append(triple)
-                        triple = []
-                        user_triple = row[9] + "_" + row[10]
+                        user_triple = str(row[9]) + "," + str(row[10])
                         if user_triple not in user_triple_list:
                             user_triple_list.append(user_triple)
-                        user_triple = ""
                         if row[4] not in ack_cs_lexicon:
                             ack_cs_lexicon.append(row[4])
                         if row[7] not in cs_lexicon:
@@ -154,18 +158,17 @@ def preprocess_dialogue_data():
     file_user.close()
 
     file_action_space = open(agent_action_space, "w")
-    file_action_space.writelines("[,,]" + "\n")
+    file_action_space.writelines(",," + "\n")
     for action in triple_list:
         file_action_space.write(str(action) + "\n")
     file_action_space.close()
 
     file_user_action_space = open(user_action_space, "w")
-    file_user_action_space.writelines("__" + "\n")
+    file_user_action_space.writelines(",," + "\n")
     for action in user_triple_list:
         for cs in ["HE","PR","SD","QESD","NONE"]:
-            tmp_action = action + "_" + cs
+            tmp_action = action + "," + cs
             file_user_action_space.write(tmp_action + "\n")
-            tmp_action = ""
     file_user_action_space.close()
 
     print("Lexicons created")

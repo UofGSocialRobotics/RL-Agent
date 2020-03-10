@@ -1,5 +1,6 @@
 import ml_models
-import numpy as np
+import utils
+import config
 
 
 class DialogState():
@@ -20,10 +21,10 @@ class DialogState():
         self.rec_P_agent = 0
 
         self.state["slots_filled"] = []
-        self.state["current_user_action"] = {}
-        self.state["previous_user_action"] = {}
-        self.state["previous_agent_action"] = {}
-        self.state["current_agent_action"] = {}
+        self.state["previous_user_action"] = config.USER_ACTION
+        self.state["current_user_action"] = config.USER_ACTION
+        self.state["previous_agent_action"] = config.AGENT_ACTION
+        self.state["current_agent_action"] = config.AGENT_ACTION
 
     def update_state(self, agent_action, user_action, agent_previous_action, user_previous_action):
         self.turns += 1.0
@@ -75,58 +76,18 @@ class DialogState():
             if "NONE" not in user_previous_action['cs']:
                 ml_models.count(agent_action['ack_cs'], self.rec_I_agent)
 
-    def vectorize(self):
-        state_vector = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        if "I" in self.state["user_social_type"]:
-            state_vector[0] = 1
-        if "crew" in self.state["slots_requested"]:
-            state_vector[1] = 1
-        if "cast" in self.state["slots_requested"]:
-            state_vector[2] = 1
-        if "genre" in self.state["slots_requested"]:
-            state_vector[3] = 1
-        if "SD" in self.state["user_current_cs"]:
-            state_vector[4] = 1
-        if "PR" in self.state["user_current_cs"]:
-            state_vector[5] = 1
-        if "HE" in self.state["user_current_cs"]:
-            state_vector[6] = 1
-        if "VSN" in self.state["user_current_cs"]:
-            state_vector[7] = 1
-        if "yes" in self.state["user_action"]:
-            state_vector[8] = 1
-        if "no" in self.state["user_action"]:
-            state_vector[9] = 1
-        if "last_movie" in self.state["user_action"]:
-            state_vector[10] = 1
-        if "cast" in self.state["user_action"]:
-            state_vector[11] = 1
-        if "crew" in self.state["user_action"]:
-            state_vector[12] = 1
-        if "genre" in self.state["user_action"]:
-            state_vector[13] = 1
-        if "SD" in self.state["previous_agent_cs"]:
-            state_vector[14] = 1
-        if "PR" in self.state["previous_agent_cs"]:
-            state_vector[15] = 1
-        if "HE" in self.state["previous_agent_cs"]:
-            state_vector[16] = 1
-        if "VSN" in self.state["previous_agent_cs"]:
-            state_vector[17] = 1
-        if "greeting" in self.state["previous_agent_action"]:
-            state_vector[18] = 1
-        if "last_movie" in self.state["previous_agent_action"]:
-            state_vector[19] = 1
-        if "cast" in self.state["previous_agent_action"]:
-            state_vector[20] = 1
-        if "crew" in self.state["previous_agent_action"]:
-            state_vector[21] = 1
-        if "genre" in self.state["previous_agent_action"]:
-            state_vector[22] = 1
-        if "(movie)" in self.state["previous_agent_action"]:
-            state_vector[23] = 1
-        if "goodbye" in self.state["previous_agent_action"]:
-            state_vector[24] = 1
-        state_vector = np.asarray(state_vector)
-        state_vector = state_vector[np.newaxis, :]
-        return state_vector
+    def encode_state(self, agent_action_encoder, user_action_encoder):
+        # Encoding agent actions
+        agent_action = utils.transform_agent_action(self.state["current_agent_action"])
+        agent_action = agent_action_encoder.transform(agent_action)
+        previous_agent_action = utils.transform_agent_action(self.state["previous_agent_action"])
+        previous_agent_action = agent_action_encoder.transform(previous_agent_action)
+        # Encoding User actions
+        user_action = utils.transform_user_action(self.state["current_user_action"])
+        user_action = user_action_encoder.transform(user_action)
+        previous_user_action = utils.transform_user_action(self.state["previous_user_action"])
+        previous_user_action = user_action_encoder.transform(previous_user_action)
+        # Todo ENcode Slots
+        # Encoding State
+        state = previous_agent_action.toarray().tolist() + previous_user_action.toarray().tolist() + agent_action.toarray().tolist() + user_action.toarray().tolist()
+        return agent_action, state
