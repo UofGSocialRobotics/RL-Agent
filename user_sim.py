@@ -173,7 +173,7 @@ class UserSimulator():
         if "P" in self.user_type:
             user_cs = 'NONE'
         else:
-            user_cs = random.choice(config.CS_LABELS)
+            user_cs = random.choice(config.USER_CS_LABELS)
         return user_cs
 
     def response_to_inform_movie(self, agent_action, mode, state):

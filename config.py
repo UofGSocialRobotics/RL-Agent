@@ -1,4 +1,5 @@
 CS_LABELS = ["NONE", "SD", "PR", "HE", "VSN"]
+USER_CS_LABELS = ["NONE", "SD", "PR", "HE"]
 CS_LABELS_DICT = {'SD': [], 'VSN': [], 'PR': [], 'HE': [], 'NONE': []}
 
 # User related

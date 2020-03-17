@@ -53,8 +53,8 @@ class DialogState():
         self.state["current_agent_action"] = agent_action
         self.state["previous_agent_action"] = agent_previous_action
 
-        print(self.state["current_agent_action"])
-        print(self.state["current_user_action"])
+        #print(self.state["current_agent_action"])
+        #print(self.state["current_user_action"])
 
         #update recos
         if "inform" in agent_action['intent'] and "movie" in agent_action['entity_type']:
@@ -87,7 +87,7 @@ class DialogState():
         user_action = user_action_encoder.transform(user_action)
         previous_user_action = utils.transform_user_action(self.state["previous_user_action"])
         previous_user_action = user_action_encoder.transform(previous_user_action)
-        # Todo ENcode Slots
+        # Todo Encode Slots
         # Encoding State
-        state = previous_agent_action.toarray().tolist() + previous_user_action.toarray().tolist() + agent_action.toarray().tolist() + user_action.toarray().tolist()
+        state = previous_agent_action.toarray().tolist()[0] + previous_user_action.toarray().tolist()[0] + agent_action.toarray().tolist()[0] + user_action.toarray().tolist()[0]
         return agent_action, state

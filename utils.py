@@ -66,7 +66,7 @@ def transform_agent_action(action_dict):
 
 def transform_user_action(action_dict):
     action = []
-    action.append(action_dict['intent'])
+    action.append(action_dict['intent'].replace(' ',''))
     action.append(action_dict['entity_type'])
     action.append(action_dict['cs'])
     return numpy.array(action).reshape(1, -1)
