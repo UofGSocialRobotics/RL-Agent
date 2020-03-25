@@ -33,6 +33,11 @@ def unpickle_dialogues(files):
             # print(emp)
             id_tab = file.split('\\')
             id_tab2 = id_tab[1].split('_')
+            if 'introduce' in emp[key]['SARA']['other']['ts']['intent']:
+                emp[key]['SARA']['other']['ts']['slot'] = 'role'
+            if 'request' in emp[key]['SARA']['other']['ts']['intent']:
+                if emp[key]['SARA']['other']['ts']['slot'] in ['last_movie', 'reason_like']:
+                    emp[key]['SARA']['other']['ts']['intent'] = 'introduce'
             if not dialog_done:
                 toprint = "1," + id_tab2[0] + ",SARA, ack," + emp[key]['SARA']['ack']['cs'] + "," + emp[key]['SARA']['other']['ts'][
             'intent'] + "," + emp[key]['SARA']['other']['ts']['slot'] + "," + emp[key]['SARA']['other'][
@@ -129,7 +134,7 @@ def preprocess_dialogue_data():
                         triple = str(row[4]) + "," + str(row[5]) + "," + str(row[7])
                         if triple not in triple_list:
                             triple_list.append(triple)
-                        user_triple = str(row[9]) + "," + str(row[10])
+                        user_triple = str(row[9]).replace(" ","") + "," + str(row[10])
                         if user_triple not in user_triple_list:
                             user_triple_list.append(user_triple)
                         if row[4] not in ack_cs_lexicon:

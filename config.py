@@ -57,24 +57,21 @@ RAPPORT_ESTIMATOR_MODEL = "./resources/rapport_estimator_model.pkl"
 RAPPORT_ESTIMATOR_TEST_MODEL = "./resources/rapport_estimator_model_test.pkl"
 RECO_ACCEPTANCE_MODEL = "./resources/reco_acceptance_model.pkl"
 RECO_ACCEPTANCE_DATASET = "./resources/user/fake_task_data.csv"
-TASK_QTABLE = "./resources/agent/task_qtable.csv"
-SOCIAL_QTABLE = "./resources/agent/social_qtable.csv"
+QTABLE = "./resources/agent/qtable.csv"
+PRETRAIN_QTABLE = "./resources/agent/pretrain_qtable.csv"
 RAPPORT_GROUPS = "./resources/training_dialogues/rapport_groups.csv"
 
 
 # Training Related
-DQN_STATE_SPACE = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-DQN_ACTION_SPACE = [0,0,0,0,0,0,0]
-BATCH_SIZE = 32
-EPISODES = 10000
-# Number of iterations
+BATCH_SIZE = 32 # Batch size for dqn learning
+EPISODES = 10000 # Number of iterations
 MAX_STEPS = 30  # Maximum steps per episode
-EPISODES_THRESHOLD = 100
+EPISODES_THRESHOLD = 100 #number of episodes after which we start writing interactions
 VERBOSE_TRAINING = 0 #0 = nothing printed; 1 = reward only; 2 = more
 
 
-LEARNING_RATE = 0.001
-GAMMA = 0.95
+LEARNING_RATE = 0.65
+GAMMA = 0.65
 EPSILON = 1.0  #
 EPSILON_MIN = 0.005  # Minimum greed 0.05%
 EPSILON_DECAY = 0.995  # Decay multiplied with epsilon after each episode

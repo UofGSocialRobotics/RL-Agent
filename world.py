@@ -2,6 +2,7 @@ import copy
 import csv
 import os
 import deep_rl_agent
+import qlearning_agent
 import user_sim
 import rule_based_agent
 import config
@@ -14,18 +15,17 @@ from tqdm import tqdm
 
 def main():
 
-    agent_deep_rl = deep_rl_agent.Agent()
+    #agent_deep_rl = deep_rl_agent.Agent()
+    agent_deep_rl = qlearning_agent.Agent()
     agent_rule_based = rule_based_agent.Agent()
     user = user_sim.UserSimulator()
     dst = state_tracker.DialogState()
     fig, subplots = plt.subplots(1, 3, sharex=True, sharey=True)
-    rl_agent_rewards = []
-    rl_task_rewards = []
-    rl_social_rewards = []
 
     print("Start")
     #pretrain_rewards, pretrain_task_rewards, pretrain_social_rewards = pretrain(agent_deep_rl, user, dst)
     #rl_agent_rewards, rl_task_rewards, rl_social_rewards = deep_rl_training(agent_deep_rl, user, dst)
+    rl_agent_rewards, rl_task_rewards, rl_social_rewards = deep_rl_training(agent_deep_rl, user, dst)
     print("Deep RL training done")
     rule_based_rewards, rule_based_task_rewards, rule_based_social_rewards = rule_based_interactions(agent_rule_based, user, dst)
     print("Rule based interactions done")
@@ -54,7 +54,6 @@ def pretrain(agent, state,sample_batch_size, action_encoder, user_action_encoder
 
     for root, dirs, files in os.walk("./resources/training_dialogues"):
         for name in tqdm(files):
-            #sleep(0.0002)
             if name.endswith(".pkl.csv"):
                 total_rewards = 0
                 task_rewards = 0
@@ -76,23 +75,20 @@ def pretrain(agent, state,sample_batch_size, action_encoder, user_action_encoder
                         agent_current_action['entity_type'] = row[6]
                         agent_current_action['cs'] = row[7]
 
-                        user_current_action['intent'] = row[9]
+                        user_current_action['intent'] = row[9].replace(" ","")
                         user_current_action['entity_type'] = row[10]
                         user_current_action['cs'] = row[11]
                         state.update_state(agent_current_action, user_current_action, agent_previous_action, user_previous_action)
                         total_reward, task_reward, social_reward = compute_reward(state)
+                        agent.update_qtables(vectorized_previous_state, vectorized_state, agent_current_action, total_reward)
                         total_rewards += total_reward
                         task_rewards += task_reward
                         social_rewards += social_reward
 
                         vectorized_action, vectorized_state = state.encode_state(action_encoder, user_action_encoder)
-                        # print("action")
-                        # print(vectorized_action.toarray().tolist()[0])
-                        # print("IN MAIN STEP ", cpt)
-                        # print(vectorized_state)
-                        # print(vectorized_previous_state)
-                        agent.remember(vectorized_state, vectorized_action, total_rewards, vectorized_previous_state, state.dialog_done)
-                        agent.replay(sample_batch_size)
+
+                        #agent.remember(vectorized_state, vectorized_action, total_rewards, vectorized_previous_state, state.dialog_done)
+                        #agent.replay(sample_batch_size)
 
                     list_rewards.append(total_rewards)
                     list_task_rewards.append(task_rewards)
@@ -101,7 +97,9 @@ def pretrain(agent, state,sample_batch_size, action_encoder, user_action_encoder
                     state.set_initial_state()
 
     print("Pretraining done ")
-
+    print(list_rewards)
+    print(agent.qtable)
+    agent.qtable.to_csv(config.QTABLE)
     #return list_rewards, list_task_rewards, list_social_rewards
 
 
@@ -130,13 +128,14 @@ def deep_rl_training(agent,user,dst):
     user_action_encoder = user.get_action_encoder()
     print("-- Encoding State Space")
     agent_action, state = dst.encode_state(action_encoder, user_action_encoder)
-    agent.model = agent.build_DQN_model(len(state), agent_action.toarray().shape[1])
+    #agent.model = agent.build_DQN_model(len(state), agent_action.toarray().shape[1])
     print("-- Encoding done")
 
     pretrain(agent, dst, sample_batch_size, action_encoder, user_action_encoder)
 
     for i in tqdm(range(0, config.EPISODES)):
-        # print("Tour " + str(i))
+        if i > (config.EPISODES - config.EPISODES_THRESHOLD) and config.VERBOSE_TRAINING > -1:
+            print("Tour " + str(i))
         agent_action, user_action = initialize(user, dst)
         vectorized_action, vectorized_state = dst.encode_state(action_encoder, user_action_encoder)
 
@@ -149,16 +148,17 @@ def deep_rl_training(agent,user,dst):
 
             user_action = user.next(agent_action, dst)
 
-            if i > (config.EPISODES - config.EPISODES_THRESHOLD) and config.VERBOSE_TRAINING > 0:
+            if i > (config.EPISODES - config.EPISODES_THRESHOLD) and config.VERBOSE_TRAINING > -1:
                 print("A: ", agent_action)
                 print("U: ", user_action)
 
             dst.update_state(agent_action, user_action, agent_previous_action, user_previous_action)
             reward, task_reward, rapport_reward = compute_reward(dst)
+            agent.update_qtables(vectorized_previous_state, vectorized_state, agent_action, reward)
             vectorized_action, vectorized_state = dst.encode_state(action_encoder, user_action_encoder)
-            agent.remember(vectorized_previous_state, vectorized_action, reward, vectorized_state, dst.dialog_done)
+            #agent.remember(vectorized_previous_state, vectorized_action, reward, vectorized_state, dst.dialog_done)
 
-        agent.replay(sample_batch_size)
+        #agent.replay(sample_batch_size)
         agent_reward_list, total_reward_agent = queue_rewards_for_plotting(i, agent_reward_list, total_reward_agent,reward)
         agent_task_reward_list, total_task_reward = queue_rewards_for_plotting(i, agent_task_reward_list,total_task_reward, task_reward)
         agent_social_reward_list, total_social_reward = queue_rewards_for_plotting(i, agent_social_reward_list,total_social_reward, rapport_reward)
@@ -166,7 +166,8 @@ def deep_rl_training(agent,user,dst):
         if epsilon >= config.EPSILON_MIN:
             epsilon *= config.EPSILON_DECAY
 
-    agent.save_model()
+    #agent.save_model()
+    agent.qtable.to_csv(config.QTABLE)
     print("epsilon", str(epsilon))
 
     return agent_reward_list, agent_task_reward_list, agent_social_reward_list
@@ -213,8 +214,11 @@ def compute_reward(state):
 
     #####################       Task Reward     #########################
     #print(state.state["slots_filled"])
-    #if "request" in agent_action['intent'] and agent_action['entity_type'] in state.state["slots_filled"]:
-    #    reward += -30
+    agent_action = state.state["current_agent_action"]
+    if "request" in agent_action['intent'] and all(item in state.state["slots_filled"] for item in ['genre','actor','director']):
+        reward += -10
+    if "introduce" in agent_action['intent'] and all(item in state.state["slots_filled"] for item in ['role','reason_like','last_movie']):
+        reward += -10
     #if "last_movie" in agent_action['intent'] and "last_movie" in state.state["slots_filled"]:
     #    reward += -30
     if state.dialog_done:
@@ -230,12 +234,10 @@ def compute_reward(state):
             data.extend(state.rec_I_agent)
             rapport = ml_models.estimate_rapport(data)
             rapport_reward = ml_models.get_rapport_reward(rapport, state.rec_P_agent / state.turns)
-            reward = reward + rapport_reward
+            reward = reward + rapport_reward[0]
             #print("Rapport :" + str(rapport))
             #print("Reward total: " + str(self.reward))
             #print("Reward from Rapport: " + str(rapport_reward) + " and from Task: " + str(task_reward))
-
-    #print(self.reward)
     return reward, task_reward, rapport_reward
 
 if __name__ == '__main__':

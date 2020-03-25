@@ -20,6 +20,7 @@ class DialogState():
         self.rec_I_agent = [0, 0, 0, 0, 0]
         self.rec_P_agent = 0
 
+        self.state["introduce_slots"] = []
         self.state["slots_filled"] = []
         self.state["previous_user_action"] = config.USER_ACTION
         self.state["current_user_action"] = config.USER_ACTION
@@ -30,14 +31,20 @@ class DialogState():
         self.turns += 1.0
 
         #update slots
-        if "request" in agent_action['intent'] and "director" in agent_action['entity_type'] and "director" not in self.state["slots_filled"]:
-            self.state["slots_filled"].append("director")
-        if "request" in agent_action['intent'] and "actor" in agent_action['entity_type'] and "actor" not in self.state["slots_filled"]:
-            self.state["slots_filled"].append("actor")
-        if "request" in agent_action['intent'] and "genre" in agent_action['entity_type'] and "genre" not in self.state["slots_filled"]:
-            self.state["slots_filled"].append("genre")
-        if "last_movie" in agent_action['intent'] and "last_movie" not in self.state["slots_filled"]:
-            self.state["slots_filled"].append("last_movie")
+        if "request" in agent_action['intent']:
+            if "director" in agent_action['entity_type'] and "director" not in self.state["slots_filled"]:
+                self.state["slots_filled"].append("director")
+            if "actor" in agent_action['entity_type'] and "actor" not in self.state["slots_filled"]:
+                self.state["slots_filled"].append("actor")
+            if "genre" in agent_action['entity_type'] and "genre" not in self.state["slots_filled"]:
+                self.state["slots_filled"].append("genre")
+        if "introduce" in agent_action['intent']:
+            if "role" in agent_action['entity_type'] and "role" not in self.state["introduce_slots"]:
+                self.state["introduce_slots"].append("role")
+            if "last_movie" in agent_action['entity_type'] and "last_movie" not in self.state["introduce_slots"]:
+                self.state["introduce_slots"].append("last_movie")
+            if "reason_like" in agent_action['entity_type'] and "reason_like" not in self.state["introduce_slots"]:
+                self.state["introduce_slots"].append("reason_like")
         if "inform" in user_action['intent']:
             if "director" in user_action['entity_type'] and "director" not in self.state["slots_filled"]:
                 self.state["slots_filled"].append("director")
@@ -46,6 +53,7 @@ class DialogState():
             if "genre" in user_action['entity_type'] and "genre" not in self.state["slots_filled"]:
                 self.state["slots_filled"].append("genre")
         self.state["slots_filled"].sort()
+        self.state["introduce_slots"].sort()
 
         #update agent and user actions
         self.state["current_user_action"] = user_action
@@ -56,9 +64,10 @@ class DialogState():
         #print(self.state["current_agent_action"])
         #print(self.state["current_user_action"])
 
+
         #update recos
         if "inform" in agent_action['intent'] and "movie" in agent_action['entity_type']:
-                    self.delivered_recos += 1
+            self.delivered_recos += 1
         if "inform" in agent_action['intent']:
             if "yes" in user_action['intent'] or "affirm" in user_action['intent']:
                 self.accepted_recos += 1
@@ -84,10 +93,13 @@ class DialogState():
         previous_agent_action = agent_action_encoder.transform(previous_agent_action)
         # Encoding User actions
         user_action = utils.transform_user_action(self.state["current_user_action"])
+        #print("action : " + str(self.state["current_user_action"]))
         user_action = user_action_encoder.transform(user_action)
-        previous_user_action = utils.transform_user_action(self.state["previous_user_action"])
-        previous_user_action = user_action_encoder.transform(previous_user_action)
+        #previous_user_action = utils.transform_user_action(self.state["previous_user_action"])
+        #previous_user_action = user_action_encoder.transform(previous_user_action)
         # Todo Encode Slots
         # Encoding State
-        state = previous_agent_action.toarray().tolist()[0] + previous_user_action.toarray().tolist()[0] + agent_action.toarray().tolist()[0] + user_action.toarray().tolist()[0]
+        state = user_action.toarray().tolist()[0] + previous_agent_action.toarray().tolist()[0]
+
+        #state = previous_agent_action.toarray().tolist()[0] + previous_user_action.toarray().tolist()[0] + agent_action.toarray().tolist()[0] + user_action.toarray().tolist()[0]
         return agent_action, state
