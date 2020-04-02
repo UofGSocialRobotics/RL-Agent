@@ -89,8 +89,7 @@ class Agent():
         #     self.movie['genres'] = movie_info.get("Genre")
 
         self.currState = next_state
-        agent_cs = self.pick_cs()
-        ack_cs = self.pick_cs()
+        ack_cs, agent_cs = self.pick_cs(next_state)
         new_msg = self.msg_to_json(next_state, self.movie, ack_cs, agent_cs)
         self.user_action = None
 
@@ -109,9 +108,27 @@ class Agent():
                 return movie['title']
 
 
-    def pick_cs(self):
-        agent_cs = random.choice(config.CS_LABELS)
-        return agent_cs
+    def pick_cs(self, action):
+        ack_cs = ''
+        agent_cs = ''
+        if "greeting" in action:
+            ack_cs = ''
+            agent_cs = random.choice(['NONE','SD','QESD','PR'])
+        if "introduce" in action:
+            ack_cs = 'SD'
+            agent_cs = 'QESD'
+        if "request" in action:
+            ack_cs = 'SD'
+            agent_cs = 'PR'
+        if "inform" in action:
+            ack_cs = 'SD'
+            agent_cs = 'PR'
+        if "bye" in action:
+            ack_cs = ''
+            agent_cs = 'NONE'
+        #ack_cs = random.choice(config.CS_LABELS)
+        #agent_cs = random.choice(config.CS_LABELS)
+        return ack_cs, agent_cs
 
 # A node corresponds to a specific state of the dialogue. It contains:
 # - a state ID (int)

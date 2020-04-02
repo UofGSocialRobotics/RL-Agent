@@ -25,10 +25,10 @@ def main():
     print("Start")
     #pretrain_rewards, pretrain_task_rewards, pretrain_social_rewards = pretrain(agent_deep_rl, user, dst)
     #rl_agent_rewards, rl_task_rewards, rl_social_rewards = deep_rl_training(agent_deep_rl, user, dst)
+    rule_based_rewards, rule_based_task_rewards, rule_based_social_rewards = rule_based_interactions(agent_rule_based,user, dst,agent_deep_rl)
+    print("Rule based interactions done")
     rl_agent_rewards, rl_task_rewards, rl_social_rewards = deep_rl_training(agent_deep_rl, user, dst)
     print("Deep RL training done")
-    rule_based_rewards, rule_based_task_rewards, rule_based_social_rewards = rule_based_interactions(agent_rule_based, user, dst)
-    print("Rule based interactions done")
     utils.plotting_rewards("Total Rewards", rl_agent_rewards, rule_based_rewards, subplots, 0)
     utils.plotting_rewards("Task Rewards", rl_task_rewards, rule_based_task_rewards, subplots, 1)
     utils.plotting_rewards("Social Rewards", rl_social_rewards, rule_based_social_rewards, subplots, 2)
@@ -168,11 +168,12 @@ def deep_rl_training(agent,user,dst):
 
     #agent.save_model()
     agent.qtable.to_csv(config.QTABLE)
+    print(agent.qtable)
     print("epsilon", str(epsilon))
 
     return agent_reward_list, agent_task_reward_list, agent_social_reward_list
 
-def rule_based_interactions(agent, user, dst):
+def rule_based_interactions(agent, user, dst, rl_agent):
     total_reward_agent = 0
     total_task_reward = 0
     total_social_reward = 0
@@ -180,13 +181,19 @@ def rule_based_interactions(agent, user, dst):
     agent_task_reward_list = []
     agent_social_reward_list = []
 
+    print("-- Encoding action spaces")
+    action_encoder, encoded_action_space = rl_agent.get_action_space_encoder()
+    user_action_encoder = user.get_action_encoder()
+
     for i in tqdm(range(0, config.EPISODES)):
         agent.init_agent()
         agent_action, user_action = initialize(user, dst)
+        vectorized_action, vectorized_state = dst.encode_state(action_encoder, user_action_encoder)
 
         while not dst.dialog_done and dst.turns < config.MAX_STEPS:
             agent_previous_action = copy.deepcopy(agent_action)
             user_previous_action = copy.deepcopy(user_action)
+            vectorized_previous_state = copy.deepcopy(vectorized_state)
 
             agent_action = agent.next(dst)
 
@@ -197,12 +204,15 @@ def rule_based_interactions(agent, user, dst):
                 print("U: ", user_action)
 
             dst.update_state(agent_action, user_action, agent_previous_action, user_previous_action)
+            reward, task_reward, rapport_reward = compute_reward(dst)
+            rl_agent.update_qtables(vectorized_previous_state, vectorized_state, agent_action, reward)
+            vectorized_action, vectorized_state = dst.encode_state(action_encoder, user_action_encoder)
 
-        reward, task_reward, rapport_reward = compute_reward(dst)
         agent_reward_list, total_reward_agent = queue_rewards_for_plotting(i, agent_reward_list, total_reward_agent, reward)
         agent_task_reward_list, total_task_reward = queue_rewards_for_plotting(i, agent_task_reward_list, total_task_reward, task_reward)
         agent_social_reward_list, total_social_reward = queue_rewards_for_plotting(i, agent_social_reward_list, total_social_reward, rapport_reward)
 
+    print(rl_agent.qtable)
     return agent_reward_list, agent_task_reward_list, agent_social_reward_list
 
 
@@ -213,16 +223,20 @@ def compute_reward(state):
     #Todo do not say bye before user gets to his limit
 
     #####################       Task Reward     #########################
-    #print(state.state["slots_filled"])
+    reward += -1
     agent_action = state.state["current_agent_action"]
     if "request" in agent_action['intent'] and all(item in state.state["slots_filled"] for item in ['genre','actor','director']):
         reward += -10
     if "introduce" in agent_action['intent'] and all(item in state.state["slots_filled"] for item in ['role','reason_like','last_movie']):
         reward += -10
+    if "greeting" in agent_action['intent'] and state.turns > 1:
+        reward += -10
+    if "introduce" in agent_action['intent'] and len(state.state["slots_filled"]) > 0:
+        reward += -10
     #if "last_movie" in agent_action['intent'] and "last_movie" in state.state["slots_filled"]:
     #    reward += -30
     if state.dialog_done:
-        reward -= state.turns
+        #reward -= state.turns
         if state.delivered_recos != 0:
             #print("user wanted " + str(state.delivered_recos) + " recos and accepted " + str(state.accepted_recos))
             reward = reward + (state.accepted_recos/state.delivered_recos) * 100

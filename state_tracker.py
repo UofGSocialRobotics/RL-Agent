@@ -98,8 +98,25 @@ class DialogState():
         #previous_user_action = utils.transform_user_action(self.state["previous_user_action"])
         #previous_user_action = user_action_encoder.transform(previous_user_action)
         # Todo Encode Slots
+        slots = self.encode_slots()
         # Encoding State
-        state = user_action.toarray().tolist()[0] + previous_agent_action.toarray().tolist()[0]
-
+        state = user_action.toarray().tolist()[0] + previous_agent_action.toarray().tolist()[0] + slots
         #state = previous_agent_action.toarray().tolist()[0] + previous_user_action.toarray().tolist()[0] + agent_action.toarray().tolist()[0] + user_action.toarray().tolist()[0]
         return agent_action, state
+
+    def encode_slots(self):
+        mandatory = [0,0,0]
+        optional = [0,0,0]
+        if "actor" in self.state["slots_filled"]:
+            mandatory[0] = 1
+        if "director" in self.state["slots_filled"]:
+            mandatory[1] = 1
+        if "genre" in self.state["slots_filled"]:
+            mandatory[2] = 1
+        if "role" in self.state["introduce_slots"]:
+            optional[0] = 1
+        if "movie_watched" in self.state["introduce_slots"]:
+            optional[1] = 1
+        if "reason_like" in self.state["introduce_slots"]:
+            optional[2] = 1
+        return (mandatory + optional)
