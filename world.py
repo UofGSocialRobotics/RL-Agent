@@ -23,11 +23,13 @@ def main():
     fig, subplots = plt.subplots(1, 3, sharex=True, sharey=True)
 
     print("Start")
-    #pretrain_rewards, pretrain_task_rewards, pretrain_social_rewards = pretrain(agent_deep_rl, user, dst)
-    #rl_agent_rewards, rl_task_rewards, rl_social_rewards = deep_rl_training(agent_deep_rl, user, dst)
     rule_based_rewards, rule_based_task_rewards, rule_based_social_rewards = rule_based_interactions(agent_rule_based,user, dst,agent_deep_rl)
     print("Rule based interactions done")
-    rl_agent_rewards, rl_task_rewards, rl_social_rewards = deep_rl_training(agent_deep_rl, user, dst)
+    #rl_agent_rewards, rl_task_rewards, rl_social_rewards = deep_rl_training(agent_deep_rl, user, dst)
+
+    action_encoder, encoded_action_space = agent_deep_rl.get_action_space_encoder()
+    user_action_encoder = user.get_action_encoder()
+    rl_agent_rewards, rl_task_rewards, rl_social_rewards = pretrain(agent_deep_rl, dst, action_encoder, user_action_encoder)
     print("Deep RL training done")
     utils.plotting_rewards("Total Rewards", rl_agent_rewards, rule_based_rewards, subplots, 0)
     utils.plotting_rewards("Task Rewards", rl_task_rewards, rule_based_task_rewards, subplots, 1)
@@ -43,7 +45,7 @@ def initialize(user,dst):
     user_action = config.USER_ACTION
     return agent_action, user_action
 
-def pretrain(agent, state,sample_batch_size, action_encoder, user_action_encoder):
+def pretrain(agent, state,action_encoder, user_action_encoder):
     print("Pretraining using data ")
     dialogue_path = config.TRAINING_DIALOGUE_PATH
     list_rewards = []
@@ -100,7 +102,9 @@ def pretrain(agent, state,sample_batch_size, action_encoder, user_action_encoder
     print(list_rewards)
     print(agent.qtable)
     agent.qtable.to_csv(config.QTABLE)
-    #return list_rewards, list_task_rewards, list_social_rewards
+    list_rewards[0] = 0
+    list_task_rewards[0] = 0
+    return list_rewards, list_task_rewards, list_social_rewards
 
 
 def queue_rewards_for_plotting(i, agent_reward_list, total_reward_agent, reward):
@@ -131,7 +135,7 @@ def deep_rl_training(agent,user,dst):
     #agent.model = agent.build_DQN_model(len(state), agent_action.toarray().shape[1])
     print("-- Encoding done")
 
-    pretrain(agent, dst, sample_batch_size, action_encoder, user_action_encoder)
+    pretrain(agent, dst, action_encoder, user_action_encoder)
 
     for i in tqdm(range(0, config.EPISODES)):
         if i > (config.EPISODES - config.EPISODES_THRESHOLD) and config.VERBOSE_TRAINING > -1:
@@ -185,7 +189,7 @@ def rule_based_interactions(agent, user, dst, rl_agent):
     action_encoder, encoded_action_space = rl_agent.get_action_space_encoder()
     user_action_encoder = user.get_action_encoder()
 
-    for i in tqdm(range(0, config.EPISODES)):
+    for i in tqdm(range(0, 90)):
         agent.init_agent()
         agent_action, user_action = initialize(user, dst)
         vectorized_action, vectorized_state = dst.encode_state(action_encoder, user_action_encoder)

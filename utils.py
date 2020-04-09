@@ -7,7 +7,6 @@ import win32com.client as wincl
 import config
 import urllib.request
 import json
-from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 import pickle
 import glob
@@ -30,7 +29,6 @@ def unpickle_dialogues(files):
         pickle_off = open(file, "rb")
         emp = pickle.load(pickle_off)
         for key, value in emp.items():
-            # print(emp)
             id_tab = file.split('\\')
             id_tab2 = id_tab[1].split('_')
             if 'introduce' in emp[key]['SARA']['other']['ts']['intent']:
@@ -103,8 +101,6 @@ def preprocess_dialogue_data():
     ack_cs_lexicon = []
     cs_lexicon = []
 
-    processed_dialogues = []
-    dialogue_step = {'State':[], 'Action':[], 'Reward':0, 'Next_State':[], 'Done':False}
     for root, dirs, files in os.walk("./resources/training_dialogues"):
         for name in files:
             if name.endswith(".pkl.csv"):
@@ -195,6 +191,119 @@ def parse_intention(intent):
     entity_type = tab[1].replace(')','')
     return intention, entity_type
 
+
+
+def select_ack(agent, agent_prev_action, user_action):
+    if agent_prev_action['intent'] in agent.ackDB:
+        if "yes" in user_action['intent'] and agent.ackDB[agent_prev_action['intent']]:
+            if user_action['cs'] in agent.ackDB[agent_prev_action['intent']]['yes']:
+                ack = pick_ack(agent, agent_prev_action['intent'], 'yes', user_action)
+            else:
+                ack = pick_ack(agent, agent_prev_action['intent'], 'yes', 'NONE')
+        elif "no" in user_action['intent'] and agent.ackDB[agent_prev_action['intent']]:
+            if user_action['cs'] in agent.ackDB[agent_prev_action['intent']]['no']:
+                ack = pick_ack(agent, agent_prev_action['intent'], 'no', user_action)
+            else:
+                ack = pick_ack(agent, agent_prev_action['intent'], 'no', 'NONE')
+        else:
+            if agent.ackDB[agent_prev_action['intent']]['default']:
+                if user_action['cs'] in agent.ackDB[agent_prev_action['intent']]['default']:
+                    ack = pick_ack(agent, agent_prev_action['intent'], 'default', user_action)
+                else:
+                    ack = pick_ack(agent, agent_prev_action['intent'], 'default', 'NONE')
+            else:
+                ack = ""
+    else:
+        ack = ""
+    return ack
+
+
+def pick_ack(agent, agent_prev_action, valence, user_action):
+    potential_options = []
+    #print(agent.ackDB[agent_prev_action][valence], user_action['cs'])
+    for option in agent.ackDB[agent_prev_action][valence][user_action['cs']]:
+        if "#entity" in option:
+            if user_action['entity']:
+                potential_options.append(option)
+        else:
+            potential_options.append(option)
+    #print(str(potential_options) + " pour l'action " + agent_prev_action)
+    if potential_options:
+        return random.choice(potential_options)
+    else:
+        return ""
+
+
+def select_specific_action(user_action, agent_action):
+    new_action = dict(user_action)
+    if "greet" in agent_action['intent']:
+        if "yes" in new_action['intent']:
+            new_action['intent'] = 'positive_greeting'
+        else:
+            new_action['intent'] = 'negative_greeting'
+    if "yes" in new_action['intent']:
+        if '(another)' in agent_action['intent']:
+            new_action['intent'] = 'yes(another)'
+        else: #'(movie)' in agent_action['intent']:
+            new_action['intent'] = 'yes(movie)'
+    elif "no" in new_action['intent']:
+        if "request(genre)" in agent_action['intent']:
+            new_action['intent'] = 'inform(genre=no)'
+        elif "request(actor)" in agent_action['intent']:
+            new_action['intent'] = 'inform(actor=no)'
+        elif "request(director)" in agent_action['intent']:
+            new_action['intent'] = 'inform(director=no)'
+        elif "request(another)" in agent_action['intent']:
+            new_action['intent'] = 'no(another)'
+    return new_action
+
+
+
+def plotting_rewards(title, rl_rewards, rule_based_rewards, subplots, col):
+    subplots[col].title.set_text(title)
+    subplots[col].plot(rl_rewards, label="rl_reward")
+    subplots[col].plot(rule_based_rewards, label="rule_based_reward")
+    subplots[col].legend(loc='best')
+
+
+
+#################################################################################################################
+#################################################################################################################
+##############                                                                                ###################
+##############                                NLG Related Functions                           ###################
+##############                                                                                ###################
+#################################################################################################################
+#################################################################################################################
+
+def replace_in_user_sentence(sentence, user_action, agent_action):
+    if "#entity" in sentence:
+        sentence = sentence.replace("#entity", user_action['entity'])
+    return sentence
+
+
+def replace_in_agent_sentence(sentence, movie, entity):
+    if "#title" in sentence:
+        sentence = sentence.replace("#title", movie['title'])
+    if "#plot" in sentence:
+        if movie['plot']:
+            sentence = sentence.replace("#plot", movie['plot'])
+        else:
+            sentence = "Sorry, I have no idea what this movie is about..."
+    if "#actors" in sentence:
+        if movie['actors']:
+            sentence = sentence.replace("#actors", movie['actors'])
+        else:
+            sentence = "Sorry, I don't remember who plays in this one..."
+    if "#genres" in sentence:
+        if movie['genres']:
+            sentence = sentence.replace("#genres", movie['genres'])
+        else:
+            sentence = "Sorry, I'm not sure about this movie's genres..."
+    if "#entity" in sentence:
+        sentence = sentence.replace("#entity", entity)
+    return sentence
+
+
 def set_voice_engine(who, voice):
     if "U" in who:
         engine = wincl.Dispatch("SAPI.SpVoice")
@@ -265,106 +374,6 @@ def generate_agent_sentence(agent, agent_action, agent_prev_action, user_action)
     if config.GENERATE_VOICE:
         agent.engine.say(sentence_to_say)
         agent.engine.runAndWait()
-
-
-def select_ack(agent, agent_prev_action, user_action):
-    if agent_prev_action['intent'] in agent.ackDB:
-        if "yes" in user_action['intent'] and agent.ackDB[agent_prev_action['intent']]:
-            if user_action['cs'] in agent.ackDB[agent_prev_action['intent']]['yes']:
-                ack = pick_ack(agent, agent_prev_action['intent'], 'yes', user_action)
-            else:
-                ack = pick_ack(agent, agent_prev_action['intent'], 'yes', 'NONE')
-        elif "no" in user_action['intent'] and agent.ackDB[agent_prev_action['intent']]:
-            if user_action['cs'] in agent.ackDB[agent_prev_action['intent']]['no']:
-                ack = pick_ack(agent, agent_prev_action['intent'], 'no', user_action)
-            else:
-                ack = pick_ack(agent, agent_prev_action['intent'], 'no', 'NONE')
-        else:
-            if agent.ackDB[agent_prev_action['intent']]['default']:
-                if user_action['cs'] in agent.ackDB[agent_prev_action['intent']]['default']:
-                    ack = pick_ack(agent, agent_prev_action['intent'], 'default', user_action)
-                else:
-                    ack = pick_ack(agent, agent_prev_action['intent'], 'default', 'NONE')
-            else:
-                ack = ""
-    else:
-        ack = ""
-    return ack
-
-
-def pick_ack(agent, agent_prev_action, valence, user_action):
-    potential_options = []
-    #print(agent.ackDB[agent_prev_action][valence], user_action['cs'])
-    for option in agent.ackDB[agent_prev_action][valence][user_action['cs']]:
-        if "#entity" in option:
-            if user_action['entity']:
-                potential_options.append(option)
-        else:
-            potential_options.append(option)
-    #print(str(potential_options) + " pour l'action " + agent_prev_action)
-    if potential_options:
-        return random.choice(potential_options)
-    else:
-        return ""
-
-
-def select_specific_action(user_action, agent_action):
-    new_action = dict(user_action)
-    if "greet" in agent_action['intent']:
-        if "yes" in new_action['intent']:
-            new_action['intent'] = 'positive_greeting'
-        else:
-            new_action['intent'] = 'negative_greeting'
-    if "yes" in new_action['intent']:
-        if '(another)' in agent_action['intent']:
-            new_action['intent'] = 'yes(another)'
-        else: #'(movie)' in agent_action['intent']:
-            new_action['intent'] = 'yes(movie)'
-    elif "no" in new_action['intent']:
-        if "request(genre)" in agent_action['intent']:
-            new_action['intent'] = 'inform(genre=no)'
-        elif "request(actor)" in agent_action['intent']:
-            new_action['intent'] = 'inform(actor=no)'
-        elif "request(director)" in agent_action['intent']:
-            new_action['intent'] = 'inform(director=no)'
-        elif "request(another)" in agent_action['intent']:
-            new_action['intent'] = 'no(another)'
-    return new_action
-
-def replace_in_user_sentence(sentence, user_action, agent_action):
-    if "#entity" in sentence:
-        sentence = sentence.replace("#entity", user_action['entity'])
-    return sentence
-
-
-def replace_in_agent_sentence(sentence, movie, entity):
-    if "#title" in sentence:
-        sentence = sentence.replace("#title", movie['title'])
-    if "#plot" in sentence:
-        if movie['plot']:
-            sentence = sentence.replace("#plot", movie['plot'])
-        else:
-            sentence = "Sorry, I have no idea what this movie is about..."
-    if "#actors" in sentence:
-        if movie['actors']:
-            sentence = sentence.replace("#actors", movie['actors'])
-        else:
-            sentence = "Sorry, I don't remember who plays in this one..."
-    if "#genres" in sentence:
-        if movie['genres']:
-            sentence = sentence.replace("#genres", movie['genres'])
-        else:
-            sentence = "Sorry, I'm not sure about this movie's genres..."
-    if "#entity" in sentence:
-        sentence = sentence.replace("#entity", entity)
-    return sentence
-
-def plotting_rewards(title, rl_rewards, rule_based_rewards, subplots, col):
-    subplots[col].title.set_text(title)
-    subplots[col].plot(rl_rewards, label="rl_reward")
-    subplots[col].plot(rule_based_rewards, label="rule_based_reward")
-    subplots[col].legend(loc='best')
-
 
 #################################################################################################################
 #################################################################################################################

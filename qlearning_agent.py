@@ -42,14 +42,12 @@ class Agent():
 
     def update_qtables(self, prev_state, current_state, agent_action, reward):
         action = agent_action['ack_cs'] + "," + agent_action['intent'] + "," + agent_action['cs']
-        #print(action)
         if str(prev_state) in self.qtable.index:
             if str(current_state) not in self.qtable.index:
                 self.qtable.loc[str(current_state)] = 0
             discounted_reward = (1 - self.learning_rate) * self.qtable.at[str(prev_state), action] + self.learning_rate * (
                         reward + self.gamma * np.max(self.qtable.loc[str(current_state), :]))
-            #print(str(reward) + " -- " + str(discounted_reward))
-            self.qtable.at[str(prev_state), action] = discounted_reward #(1 - self.learning_rate) * self.qtable.at[str(prev_state), action] + self.learning_rate * (reward + self.gamma * np.max(self.qtable.loc[str(current_state), :]))
+            self.qtable.at[str(prev_state), action] = discounted_reward
         else:
             self.qtable.loc[str(prev_state)] = 0
             if str(current_state) not in self.qtable.index:
