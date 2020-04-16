@@ -36,6 +36,15 @@ def unpickle_dialogues(files):
             if 'request' in emp[key]['SARA']['other']['ts']['intent']:
                 if emp[key]['SARA']['other']['ts']['slot'] in ['last_movie', 'reason_like']:
                     emp[key]['SARA']['other']['ts']['intent'] = 'introduce'
+                elif emp[key]['SARA']['other']['ts']['slot'] in 'feedback':
+                    emp[key]['SARA']['other']['ts']['intent'] = 'bye'
+                    emp[key]['SARA']['other']['ts']['slot'] = 'feedback'
+                elif emp[key]['SARA']['other']['ts']['slot'] in 'another_one':
+                     emp[key]['SARA']['other']['ts']['intent'] = 'another_one'
+                     emp[key]['SARA']['other']['ts']['slot'] = ''
+                elif emp[key]['SARA']['other']['ts']['slot'] in 'reason_not_like':
+                     emp[key]['SARA']['other']['ts']['intent'] = 'reason_not_like'
+                     emp[key]['SARA']['other']['ts']['slot'] = ''
             if not dialog_done:
                 toprint = "1," + id_tab2[0] + ",SARA, ack," + emp[key]['SARA']['ack']['cs'] + "," + emp[key]['SARA']['other']['ts'][
             'intent'] + "," + emp[key]['SARA']['other']['ts']['slot'] + "," + emp[key]['SARA']['other'][
@@ -65,14 +74,16 @@ def transform_agent_action(action_dict):
     action.append(action_dict['ack_cs'])
     action.append(action_dict['intent'])
     action.append(action_dict['cs'])
-    return numpy.array(action).reshape(1, -1)
+    return(action)
+    #return numpy.array(action).reshape(1, -1)
 
 def transform_user_action(action_dict):
     action = []
     action.append(action_dict['intent'].replace(' ',''))
     action.append(action_dict['entity_type'])
     action.append(action_dict['cs'])
-    return numpy.array(action).reshape(1, -1)
+    return(action)
+    #return numpy.array(action).reshape(1, -1)
 
 def preprocess_dialogue_data():
     print("Creating lexicons and NN data... ")
@@ -96,6 +107,7 @@ def preprocess_dialogue_data():
 
     triple = ""
     triple_list = []
+    double = ""
     user_triple = ""
     user_triple_list = []
     ack_cs_lexicon = []
@@ -130,6 +142,9 @@ def preprocess_dialogue_data():
                         triple = str(row[4]) + "," + str(row[5]) + "," + str(row[7])
                         if triple not in triple_list:
                             triple_list.append(triple)
+                        double = str(str(row[5]) + "," + str(row[6]))
+                        if double not in agent_actions_list:
+                            agent_actions_list.append(double)
                         user_triple = str(row[9]).replace(" ","") + "," + str(row[10])
                         if user_triple not in user_triple_list:
                             user_triple_list.append(user_triple)
@@ -175,13 +190,6 @@ def preprocess_dialogue_data():
     print("Lexicons created")
 
 def encode(data):
-    #label_encoder = LabelEncoder()
-    #integer_encoded = label_encoder.fit_transform(data)
-    #onehot_encoder = OneHotEncoder(sparse=False)
-    #integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
-    #onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
-    #return onehot_encoder
-
     enc = OneHotEncoder()
     return enc.fit(data)
 

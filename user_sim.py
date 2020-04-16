@@ -99,6 +99,7 @@ class UserSimulator():
                 user_intention = "greeting"
             elif "introduce" in agent_action['intent']:
                 if "role" in agent_action['entity_type']:
+                    #Todo User can inform director/actor/genre
                     user_intention = 'affirm'
                     user_entity = ''
                     entity_type = ''
@@ -138,30 +139,48 @@ class UserSimulator():
                         polarity = "+"
                     else:
                         user_intention = 'negate'
-                elif "why" in agent_action['intent']:
-                    user_intention = 'inform(why)'
-                elif "opinion" in agent_action['intent']:
-                    user_intention = 'inform(opinion)'
             # Todo Do something better here
             # Todo Check when to reinit the movie_agenda
             elif "inform" in agent_action['intent']:
                 user_intention = self.response_to_inform_movie(agent_action, config.INTERACTION_MODE, state)
+            elif "another_one" in agent_action['intent']:
+            #Todo Check if user recos are updated
+                if self.current_number_recos >= self.number_recos:
+                    user_intention = 'negate'
+                    user_entity = ''
+                    entity_type = ''
+                    polarity = ""
+                else:
+                    user_intention = 'affirm'
+                    user_entity = ''
+                    entity_type = ''
+                    polarity = ""
+            elif "reason_not_like" in agent_action['intent']:
+                user_intention = 'inform'
+                user_entity = ''
+                entity_type = 'reason_not_like'
+                polarity = ""
             else:
                 user_intention = "affirm"
         else:
-            if "why" in agent_action['intent']:
+            if "reason_not_like" in agent_action['intent']:
                 user_intention = 'inform'
                 user_entity = ''
-                entity_type = 'why'
-                polarity = "+"
-            elif "opinion" in agent_action['intent']:
-                user_intention = 'inform'
-                user_entity = ''
-                entity_type = 'opinion'
-                polarity = "+"
-
+                entity_type = 'reason_not_like'
+                polarity = ""
             else:
-                user_intention = "bye"
+                user_intention = "negate"
+        if "bye" in agent_action['intent']:
+            if "feedback" in agent_action['entity_type']:
+                user_intention = 'inform'
+                user_entity = ''
+                entity_type = 'feedback'
+                polarity = ""
+            else:
+                user_intention = 'bye'
+                user_entity = ''
+                entity_type = ''
+                polarity = ""
 
         user_cs = self.pick_cs()
 

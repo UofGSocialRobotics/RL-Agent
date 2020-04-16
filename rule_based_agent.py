@@ -20,11 +20,21 @@ class Agent():
 
         self.user_action = None
 
+        self.actions = self.load_actions_lexicon(config.AGENT_ACTION_SPACE)
+
         self.movie = {'title': "", 'year': "", 'plot': "", 'actors': [], 'genres': [], 'poster': ""}
         self.nodes = {}
         self.user_model = {"liked_cast": [], "disliked_cast": [], 'liked_crew': [], 'disliked_crew': [],
                            "liked_genres": [], 'disliked_genres': [], 'liked_movies': [], 'disliked_movies': []}
         self.load_model(config.DM_MODEL)
+
+    def load_actions_lexicon(self, path):
+        with open(path) as f:
+            list_actions = []
+            for line in f:
+                line_input = line.replace('\n','').split(',')
+                list_actions.append(line_input)
+        return list_actions
 
     def init_agent(self):
         self.currState = "start"
@@ -109,25 +119,15 @@ class Agent():
 
 
     def pick_cs(self, action):
-        ack_cs = ''
-        agent_cs = ''
-        if "greeting" in action:
-            ack_cs = ''
-            agent_cs = random.choice(['NONE','SD','QESD','PR'])
-        if "introduce" in action:
-            ack_cs = 'SD'
-            agent_cs = 'QESD'
-        if "request" in action:
-            ack_cs = 'SD'
-            agent_cs = 'PR'
-        if "inform" in action:
-            ack_cs = 'SD'
-            agent_cs = 'PR'
-        if "bye" in action:
-            ack_cs = ''
-            agent_cs = 'NONE'
-        #ack_cs = random.choice(config.CS_LABELS)
-        #agent_cs = random.choice(config.CS_LABELS)
+        #Todo check valid CS
+        action = action.split('(')
+        action_pool = []
+        for actions in self.actions:
+            if action[0] in actions:
+                action_pool.append(actions)
+        agent_action = random.choice(action_pool)
+        ack_cs = agent_action[0]
+        agent_cs = agent_action[2]
         return ack_cs, agent_cs
 
 # A node corresponds to a specific state of the dialogue. It contains:

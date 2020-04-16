@@ -60,6 +60,7 @@ RECO_ACCEPTANCE_DATASET = "./resources/user/fake_task_data.csv"
 QTABLE = "./resources/agent/qtable.csv"
 PRETRAIN_QTABLE = "./resources/agent/pretrain_qtable.csv"
 RAPPORT_GROUPS = "./resources/training_dialogues/rapport_groups.csv"
+RULE_BASED_INTERACTIONS_FILE = "./resources/generated_rule_based_interactions.csv"
 
 
 # Training Related

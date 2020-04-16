@@ -15,6 +15,7 @@ class DialogState():
         self.accepted_recos = 0
         self.delivered_recos = 0
         self.state = {}
+        self.reward = 0
 
         self.rec_I_user = [0, 0, 0, 0, 0]
         self.rec_I_agent = [0, 0, 0, 0, 0]
@@ -61,9 +62,6 @@ class DialogState():
         self.state["current_agent_action"] = agent_action
         self.state["previous_agent_action"] = agent_previous_action
 
-        #print(self.state["current_agent_action"])
-        #print(self.state["current_user_action"])
-
 
         #update recos
         if "inform" in agent_action['intent'] and "movie" in agent_action['entity_type']:
@@ -72,7 +70,7 @@ class DialogState():
             if "yes" in user_action['intent'] or "affirm" in user_action['intent']:
                 self.accepted_recos += 1
 
-        if "bye" in agent_action['intent'] or "bye" in user_action['intent']:
+        if "bye" in user_action['intent']:
             self.dialog_done = True
         self.append_data_from_simulation(agent_action, user_action, agent_previous_action, user_previous_action)
 
@@ -93,16 +91,34 @@ class DialogState():
         previous_agent_action = agent_action_encoder.transform(previous_agent_action)
         # Encoding User actions
         user_action = utils.transform_user_action(self.state["current_user_action"])
-        #print("action : " + str(self.state["current_user_action"]))
         user_action = user_action_encoder.transform(user_action)
-        #previous_user_action = utils.transform_user_action(self.state["previous_user_action"])
-        #previous_user_action = user_action_encoder.transform(previous_user_action)
+        previous_user_action = utils.transform_user_action(self.state["previous_user_action"])
+        previous_user_action = user_action_encoder.transform(previous_user_action)
         # Todo Encode Slots
         slots = self.encode_slots()
+        recos_good = self.encode_recos(self.accepted_recos)
+        recos_done = self.encode_recos(self.delivered_recos)
+
         # Encoding State
-        state = user_action.toarray().tolist()[0] + previous_agent_action.toarray().tolist()[0] + slots
+        state = user_action.toarray().tolist()[0] + slots + recos_good + recos_done
         #state = previous_agent_action.toarray().tolist()[0] + previous_user_action.toarray().tolist()[0] + agent_action.toarray().tolist()[0] + user_action.toarray().tolist()[0]
         return agent_action, state
+
+    def get_state(self):
+        # Encoding agent actions
+        agent_action = utils.transform_agent_action(self.state["current_agent_action"])
+        previous_agent_action = utils.transform_agent_action(self.state["previous_agent_action"])
+        # Encoding User actions
+        user_action = utils.transform_user_action(self.state["current_user_action"])
+        # Todo Encode Slots
+        slots = self.encode_slots()
+        recos_good = self.encode_recos(self.accepted_recos)
+        recos_done = self.encode_recos(self.delivered_recos)
+
+        # Encoding State
+        state = str(agent_action[1]) + str(user_action) + str(slots) + str(recos_good) + str(recos_done)
+        #state = previous_agent_action.toarray().tolist()[0] + previous_user_action.toarray().tolist()[0] + agent_action.toarray().tolist()[0] + user_action.toarray().tolist()[0]
+        return state
 
     def encode_slots(self):
         mandatory = [0,0,0]
@@ -115,8 +131,26 @@ class DialogState():
             mandatory[2] = 1
         if "role" in self.state["introduce_slots"]:
             optional[0] = 1
-        if "movie_watched" in self.state["introduce_slots"]:
+        if "last_movie" in self.state["introduce_slots"]:
             optional[1] = 1
         if "reason_like" in self.state["introduce_slots"]:
             optional[2] = 1
         return (mandatory + optional)
+
+    def encode_recos(self,number):
+        vector = [0,0,0]
+        if number == 1:
+            vector = [0, 0, 1]
+        if number == 2:
+            vector = [0, 1, 0]
+        if number == 3:
+            vector = [0, 1, 1]
+        if number == 4:
+            vector = [1, 0, 0]
+        if number == 5:
+            vector = [1, 0, 1]
+        if number == 6:
+            vector = [1, 1, 0]
+        if number == 7:
+            vector = [1, 1, 1]
+        return (vector)
