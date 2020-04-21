@@ -69,6 +69,12 @@ def unpickle_dialogues(files):
 
     cs_count_file.close()
 
+def write_interactions_file(turns, interactions_file):
+    file = open(interactions_file, "w")
+    for action in turns:
+        file.writelines(str(action) + "\n")
+    file.close()
+
 def transform_agent_action(action_dict):
     action = []
     action.append(action_dict['ack_cs'])
@@ -84,6 +90,15 @@ def transform_user_action(action_dict):
     action.append(action_dict['cs'])
     return(action)
     #return numpy.array(action).reshape(1, -1)
+
+def queue_rewards_for_plotting(i, agent_reward_list, total_reward_agent, reward):
+    if i % config.EPISODES_THRESHOLD == 0:
+        agent_reward_list.append(total_reward_agent / config.EPISODES_THRESHOLD)
+        total_reward_agent = 0
+    else:
+        total_reward_agent += reward
+
+    return agent_reward_list, total_reward_agent
 
 def preprocess_dialogue_data():
     print("Creating lexicons and NN data... ")

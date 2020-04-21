@@ -13,7 +13,9 @@ class Agent():
         self.weight_backup = ".//resources//agent//dqn_weight.h5"
         self.memory = deque(maxlen=2000)
 
+#        self.qtable_columns, self.actions = self.load_actions_lexicon(config.AGENT_ACTION_SPACE)
         self.qtable_columns, self.actions = self.load_actions_lexicon(config.AGENT_ACTION_SPACE)
+
         self.action_encoder = None
 
         self.qtable = pandas.DataFrame(0, index=[], columns=self.qtable_columns)

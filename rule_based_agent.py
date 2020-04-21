@@ -99,6 +99,10 @@ class Agent():
         #     self.movie['genres'] = movie_info.get("Genre")
 
         self.currState = next_state
+
+        if state.accepted_recos >= 1:
+            next_state = "bye()"
+
         ack_cs, agent_cs = self.pick_cs(next_state)
         new_msg = self.msg_to_json(next_state, self.movie, ack_cs, agent_cs)
         self.user_action = None

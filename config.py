@@ -61,6 +61,7 @@ QTABLE = "./resources/agent/qtable.csv"
 PRETRAIN_QTABLE = "./resources/agent/pretrain_qtable.csv"
 RAPPORT_GROUPS = "./resources/training_dialogues/rapport_groups.csv"
 RULE_BASED_INTERACTIONS_FILE = "./resources/generated_rule_based_interactions.csv"
+RL_INTERACTIONS_FILE = "./resources/generated_rl_interactions.csv"
 
 
 # Training Related

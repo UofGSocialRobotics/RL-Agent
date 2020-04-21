@@ -143,23 +143,23 @@ class UserSimulator():
             # Todo Check when to reinit the movie_agenda
             elif "inform" in agent_action['intent']:
                 user_intention = self.response_to_inform_movie(agent_action, config.INTERACTION_MODE, state)
-            elif "another_one" in agent_action['intent']:
-            #Todo Check if user recos are updated
-                if self.current_number_recos >= self.number_recos:
-                    user_intention = 'negate'
-                    user_entity = ''
-                    entity_type = ''
-                    polarity = ""
-                else:
-                    user_intention = 'affirm'
-                    user_entity = ''
-                    entity_type = ''
-                    polarity = ""
-            elif "reason_not_like" in agent_action['intent']:
-                user_intention = 'inform'
-                user_entity = ''
-                entity_type = 'reason_not_like'
-                polarity = ""
+            # elif "another_one" in agent_action['intent']:
+            # #Todo Check if user recos are updated
+            #     if self.current_number_recos >= self.number_recos:
+            #         user_intention = 'negate'
+            #         user_entity = ''
+            #         entity_type = ''
+            #         polarity = ""
+            #     else:
+            #         user_intention = 'affirm'
+            #         user_entity = ''
+            #         entity_type = ''
+            #         polarity = ""
+            # elif "reason_not_like" in agent_action['intent']:
+            #     user_intention = 'inform'
+            #     user_entity = ''
+            #     entity_type = 'reason_not_like'
+            #     polarity = ""
             else:
                 user_intention = "affirm"
         else:

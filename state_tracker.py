@@ -116,7 +116,7 @@ class DialogState():
         recos_done = self.encode_recos(self.delivered_recos)
 
         # Encoding State
-        state = str(agent_action[1]) + str(user_action) + str(slots) + str(recos_good) + str(recos_done)
+        state = str(agent_action[1]) + str(user_action) + str(slots) + str(recos_good) #+ str(recos_done)
         #state = previous_agent_action.toarray().tolist()[0] + previous_user_action.toarray().tolist()[0] + agent_action.toarray().tolist()[0] + user_action.toarray().tolist()[0]
         return state
 
