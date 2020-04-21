@@ -384,6 +384,68 @@ def generate_user_sentence(user, user_action, agent_action):
         user.engine.Speak(sentence_to_say)
 
 
+def pretrain(agent, state,action_encoder, user_action_encoder):
+    print("Pretraining using data ")
+    dialogue_path = config.TRAINING_DIALOGUE_PATH
+    list_rewards = []
+    list_task_rewards = []
+    list_social_rewards = []
+    rapport_scores = pd.read_csv(config.RAPPORT_GROUPS, header=None, names=['id', 'group', 'rapport'])
+    cpt = 0
+
+    for root, dirs, files in os.walk("./resources/training_dialogues"):
+        for name in tqdm(files):
+            if name.endswith(".pkl.csv"):
+                total_rewards = 0
+                task_rewards = 0
+                social_rewards = 0
+                with open(dialogue_path + "/" + name, mode='rt') as csv_file:
+                    interaction = csv.reader(csv_file, delimiter=',')
+                    user_current_action = config.USER_ACTION
+                    agent_current_action = config.AGENT_ACTION
+                    vectorized_action, vectorized_state = state.get_state()
+                    for row in interaction:
+
+                        cpt += 1
+                        agent_previous_action = copy.deepcopy(agent_current_action)
+                        user_previous_action = copy.deepcopy(user_current_action)
+                        vectorized_previous_state = copy.deepcopy(vectorized_state)
+
+                        agent_current_action['ack_cs'] = row[4]
+                        agent_current_action['intent'] = row[5]
+                        agent_current_action['entity_type'] = row[6]
+                        agent_current_action['cs'] = row[7]
+
+                        user_current_action['intent'] = row[9].replace(" ","")
+                        user_current_action['entity_type'] = row[10]
+                        user_current_action['cs'] = row[11]
+                        state.update_state(agent_current_action, user_current_action, agent_previous_action, user_previous_action)
+                        total_reward, task_reward, social_reward = compute_reward(state)
+                        agent.update_qtables(vectorized_previous_state, vectorized_state, agent_current_action, total_reward)
+                        total_rewards += total_reward
+                        task_rewards += task_reward
+                        social_rewards += social_reward
+
+                        vectorized_action, vectorized_state = state.get_state()
+
+                        #agent.remember(vectorized_state, vectorized_action, total_rewards, vectorized_previous_state, state.dialog_done)
+                        #agent.replay(sample_batch_size)
+
+                    list_rewards.append(total_rewards)
+                    list_task_rewards.append(task_rewards)
+                    social_reward = rapport_scores.loc[rapport_scores['id'].isin([row[1]])]
+                    list_social_rewards.append((social_reward.iloc[0,2]/7)*100)
+                    state.set_initial_state()
+
+    print("Pretraining done ")
+    print(list_rewards)
+    print(agent.qtable)
+    agent.qtable.to_csv(config.QTABLE)
+    list_rewards[0] = 0
+    list_task_rewards[0] = 0
+    return list_rewards, list_task_rewards, list_social_rewards
+
+
 def generate_agent_sentence(agent, agent_action, agent_prev_action, user_action):
     if config.USE_ACKS:
         sentence = select_ack(agent, agent_prev_action, user_action)

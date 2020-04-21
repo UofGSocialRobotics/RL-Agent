@@ -67,7 +67,7 @@ class DialogState():
         if "inform" in agent_action['intent'] and "movie" in agent_action['entity_type']:
             self.delivered_recos += 1
         if "inform" in agent_action['intent']:
-            if "yes" in user_action['intent'] or "affirm" in user_action['intent']:
+            if "affirm" in user_action['intent']:
                 self.accepted_recos += 1
 
         if "bye" in user_action['intent']:
