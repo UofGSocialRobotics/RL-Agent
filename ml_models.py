@@ -354,7 +354,15 @@ def get_rapport_reward(rapport_score, none_ratio):
     #if "P" in user_type:
     #    reward = none_ratio *100
     #else:
-    reward = (rapport_score/7) * 100
+    #reward = (rapport_score/7) * 100
+    if rapport_score <4:
+        reward = -50
+    elif rapport_score <5:
+        reward = 0
+    elif rapport_score <6:
+        reward = 50
+    elif rapport_score <7:
+        reward = 100
     return reward
 
 if __name__ == '__main__':

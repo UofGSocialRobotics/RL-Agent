@@ -75,6 +75,10 @@ def write_interactions_file(turns, interactions_file):
         file.writelines(str(action) + "\n")
     file.close()
 
+def recreate_action(action_string):
+    action_tab = action_string.split(",")
+    return action_tab
+
 def transform_agent_action(action_dict):
     action = []
     action.append(action_dict['ack_cs'])

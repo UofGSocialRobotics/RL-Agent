@@ -58,7 +58,7 @@ def run_interactions(agent, user, dst, mode):
             if mode == 0:
                 agent_action = agent.next(dst)
             else:
-                agent_action = agent.next_rl(dst)
+                agent_action = agent.next_rl(dst, epsilon)
             user_action = user.next(agent_action, dst)
 
             previous_dst = copy.deepcopy(dst)
@@ -106,9 +106,13 @@ def compute_reward(state, previous_state):
     if "introduce" in agent_action['intent'] and len(previous_state.state["slots_filled"]) > 0:
         reward += -10
     if state.dialog_done:
-        if state.delivered_recos != 0:
-            #print("user wanted " + str(state.delivered_recos) + " recos and accepted " + str(state.accepted_recos))
-            reward = reward + (state.accepted_recos/state.delivered_recos) * 100
+        if state.delivered_recos == 0:
+            reward = -100
+        else:
+            if state.accepted_recos != 0:
+                reward = reward + (state.accepted_recos/state.delivered_recos) * 100
+            else:
+                reward = -100
             task_reward = reward
 
     #####################       Social Reward     #########################
@@ -117,10 +121,7 @@ def compute_reward(state, previous_state):
             data.extend(state.rec_I_agent)
             rapport = ml_models.estimate_rapport(data)
             rapport_reward = ml_models.get_rapport_reward(rapport, state.rec_P_agent / state.turns)
-            reward = reward + rapport_reward[0]
-            #print("Rapport :" + str(rapport))
-            #print("Reward total: " + str(self.reward))
-            #print("Reward from Rapport: " + str(rapport_reward) + " and from Task: " + str(task_reward))
+            reward = reward + rapport_reward#[0]
     state.reward = reward
     return reward, task_reward, rapport_reward
 

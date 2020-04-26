@@ -206,21 +206,21 @@ class UserSimulator():
                 self.current_number_recos += 1
             elif "genre" in state["slots_filled"] and "actor" in state["slots_filled"] and "director" not in state["slots_filled"]:
                 self.movie_agenda = ["affirm", "negate"]
-                self.movie_agenda_probas = [0.7, 0.3]
+                self.movie_agenda_probas = [0.3, 0.7]
                 user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                 if "affirm" in user_intention:
                     self.accepted_recos += 1
                 self.current_number_recos += 1
             elif "genre" in state["slots_filled"] and "actor" not in state["slots_filled"] and "director" in state["slots_filled"]:
                 self.movie_agenda = ["affirm", "negate"]
-                self.movie_agenda_probas = [0.7, 0.3]
+                self.movie_agenda_probas = [0.3, 0.7]
                 user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                 if "affirm" in user_intention:
                     self.accepted_recos += 1
                 self.current_number_recos += 1
             elif "genre" not in state["slots_filled"] and "actor" in state["slots_filled"] and "director" in state["slots_filled"]:
                 self.movie_agenda = ["affirm", "negate"]
-                self.movie_agenda_probas = [0.7, 0.3]
+                self.movie_agenda_probas = [0.3, 0.7]
                 user_intention = numpy.random.choice(self.movie_agenda, p=self.movie_agenda_probas)
                 if "affirm" in user_intention:
                     self.accepted_recos += 1
