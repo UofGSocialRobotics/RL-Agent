@@ -129,6 +129,9 @@ if __name__ == '__main__':
     #utils.unpickle_dialogues(config.RAW_DIALOGUES_PATH + "*_full_dialog.pkl")
     #utils.preprocess_dialogue_data()
     #ml_models.build_reciprocity_dataset()
-    main()
+    ml_models.test_re()
+    ml_models.build_social_model()
+
+    #main()
 
 

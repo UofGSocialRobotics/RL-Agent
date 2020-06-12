@@ -55,6 +55,8 @@ RAW_DIALOGUES_PATH = "./resources/raw_dialogues/"
 TRAINING_DIALOGUE_PATH = "./resources/training_dialogues/"
 RAPPORT_ESTIMATOR_MODEL = "./resources/rapport_estimator_model.pkl"
 RAPPORT_ESTIMATOR_TEST_MODEL = "./resources/rapport_estimator_model_test.pkl"
+RAPPORT_ESTIMATOR_MODEL_TOSCORE1 = "./resources/rapport_estimator_model_toscore1.pkl"
+RAPPORT_ESTIMATOR_TEST_MODEL_TOSCORE2 = "./resources/rapport_estimator_model_test_toscore2.pkl"
 RECO_ACCEPTANCE_MODEL = "./resources/reco_acceptance_model.pkl"
 RECO_ACCEPTANCE_DATASET = "./resources/user/fake_task_data.csv"
 QTABLE = "./resources/agent/qtable.csv"
@@ -66,7 +68,7 @@ RL_INTERACTIONS_FILE = "./resources/generated_rl_interactions.csv"
 
 # Training Related
 BATCH_SIZE = 32 # Batch size for dqn learning
-EPISODES = 10000 # Number of iterations
+EPISODES = 20000 # Number of iterations
 MAX_STEPS = 30  # Maximum steps per episode
 EPISODES_THRESHOLD = 100 #number of episodes after which we start writing interactions
 VERBOSE_TRAINING = 0 #0 = nothing printed; 1 = reward only; 2 = more
@@ -76,4 +78,4 @@ LEARNING_RATE = 0.65
 GAMMA = 0.65
 EPSILON = 1.0  #
 EPSILON_MIN = 0.005  # Minimum greed 0.05%
-EPSILON_DECAY = 0.995  # Decay multiplied with epsilon after each episode
+EPSILON_DECAY = 0.9995  # Decay multiplied with epsilon after each episode

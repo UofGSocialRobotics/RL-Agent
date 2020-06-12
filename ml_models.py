@@ -1,6 +1,7 @@
 import os
 import csv
 import pickle
+import ml_models
 
 from keras.optimizers import Adam
 from numpy import array
@@ -29,6 +30,11 @@ def build_task_model():
     dataset = config.RECO_ACCEPTANCE_DATASET
     cross_validate(dataset)
 
+def build_social_model():
+    dataset = "reciprocity_dataset.csv"
+    print(dataset)
+    cross_validate(dataset)
+
 def get_task_data(dataset_name):
     dataset = pd.read_csv(dataset_name, index_col=False, header=None)
     X = dataset.drop([4], axis=1)
@@ -39,14 +45,14 @@ def get_task_data(dataset_name):
     return X_train, X_test, y_train, y_test
 
 def cross_validate(dataset):
-    #X_train, X_test, y_train, y_test = get_data(dataset)
-    X_train, X_test, y_train, y_test = get_task_data(dataset)
+    X_train, X_test, y_train, y_test = get_data(dataset)
+    #X_train, X_test, y_train, y_test = get_task_data(dataset)
 
-    clf_models = get_clf_models()
+    #clf_models = get_clf_models()
     reg_models = get_reg_models()
 
-    compute_clf_scores(clf_models, X_train, X_test, y_train, y_test)
-    #compute_reg_scores(reg_models, X_train, X_test, y_train, y_test)
+    #compute_clf_scores(clf_models, X_train, X_test, y_train, y_test)
+    compute_reg_scores(reg_models, X_train, X_test, y_train, y_test)
 
 
 #################################################################################################################
@@ -238,9 +244,9 @@ def compute_reg_scores(regressors_list, X_train, X_test, y_train, y_test):
             print(myDF3)
 
         if "Rid" in name:
-            filename = config.RAPPORT_ESTIMATOR_MODEL
+            filename = config.RAPPORT_ESTIMATOR_MODEL_TOSCORE1
             filename2 = config.RAPPORT_ESTIMATOR_TEST_MODEL
-            #pickle.dump(results.best_estimator_, open(filename, 'wb'))
+            pickle.dump(results.best_estimator_, open(filename, 'wb'))
 
 
             loaded_model = pickle.load(open(filename, 'rb'))
@@ -296,7 +302,6 @@ def compute_clf_scores(classifiers_list, X_train, X_test, y_train, y_test):
             filename = config.RECO_ACCEPTANCE_MODEL
             pickle.dump(results.best_estimator_, open(filename, 'wb'))
 
-            print("Je vais faire un clacul!!!!")
             loaded_model = pickle.load(open(filename, 'rb'))
             result = loaded_model.score(X_test, y_test)
             print("pickle prediction: " + str(result))
@@ -352,25 +357,31 @@ def estimate_rapport(data):
 
 def get_rapport_reward(rapport_score, none_ratio):
     #if "P" in user_type:
-    #    reward = none_ratio *100
+    #   reward = none_ratio *100
     #else:
-    #reward = (rapport_score/7) * 100
-    if rapport_score <4:
-        reward = -50
-    elif rapport_score <5:
-        reward = 0
-    elif rapport_score <6:
-        reward = 50
-    elif rapport_score <7:
-        reward = 100
+    reward = (rapport_score/7) * 100
+    #if rapport_score <4:
+    #    reward = -50
+    #elif rapport_score <5:
+    #    reward = 0
+    #elif rapport_score <6:
+    #    reward = 50
+    #elif rapport_score <7:
+    #    reward = 100
     return reward
+    #Todo CHange Reward function so that introduction gives some rapport?
 
 if __name__ == '__main__':
     #build_reciprocity_dataset()
     #cross_validate()
     build_task_model()
 
-
+def test_re():
+    data = []
+    data.extend([3, 3, 2, 2, 0])
+    data.extend([2, 3, 0, 3, 1])
+    rapport = ml_models.estimate_rapport(data)
+    print("Rapport: " + str(rapport))
 
 #################################################################################################################
 #################################################################################################################
@@ -388,3 +399,4 @@ def _build_DQN_model(state_size, action_size):
     model.add(Dense(action_size, activation='softmax'))
     model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=self.learning_rate))
     return model
+
