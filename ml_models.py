@@ -12,6 +12,7 @@ from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 import config
 import pandas as pd
+from sklearn.dummy import DummyRegressor
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.linear_model import LogisticRegression, LinearRegression, Ridge, Lasso
 from sklearn.model_selection import cross_val_score, GridSearchCV, train_test_split
@@ -32,7 +33,7 @@ def build_task_model():
 
 def build_social_model():
     dataset = "reciprocity_dataset.csv"
-    print(dataset)
+    #print(dataset)
     cross_validate(dataset)
 
 def get_task_data(dataset_name):
@@ -197,7 +198,7 @@ def get_data(dataset_name):
 
 def compute_reg_scores(regressors_list, X_train, X_test, y_train, y_test):
     for name, reg in regressors_list.items():
-        if name == 'Lin' or name == 'Las' or name == 'Rid' or name in 'MLP':
+        if name == 'Lin' or name == 'Las' or name == 'Rid' or name == 'Dum' or name in 'MLP':
             grid_values = {}
         elif name in 'MLP':
             grid_values = [{'learning_rate': ["constant", "invscaling", "adaptive"],
@@ -218,7 +219,7 @@ def compute_reg_scores(regressors_list, X_train, X_test, y_train, y_test):
         print(name + ' Root Mean Squared Error: ' +  str(np.sqrt(metrics.mean_squared_error(y_test, y_pred))))
         print(name + ' r2: ' + str(metrics.r2_score(y_test, y_pred)))
 
-        if name not in 'MLP':
+        if name not in 'MLP' and name not in 'Dum':
             params = np.append(results.best_estimator_.intercept_, results.best_estimator_.coef_)
             newX = pd.DataFrame({"Constant": np.ones(len(X_test))}).join(pd.DataFrame(X_test))
             MSE = (sum((y_test - y_pred) ** 2)) / (len(newX) - len(newX.columns))
@@ -313,12 +314,13 @@ def compute_clf_scores(classifiers_list, X_train, X_test, y_train, y_test):
         print(key + " - confusion matrix:\n " + str(score[1]))
 
 def get_reg_models():
+    Dum = DummyRegressor(strategy="mean")
     Lin = LinearRegression()
     Rid = Ridge()
     Las = Lasso()
     MLP = MLPRegressor(hidden_layer_sizes=10, max_iter=100)
 
-    reg_dict = {'Lin': Lin, 'Rid': Rid, 'Las': Las, 'MLP': MLP}
+    reg_dict = {'Dum': Dum, 'Lin': Lin, 'Rid': Rid, 'Las': Las, 'MLP': MLP}
     return reg_dict
 
 def get_clf_models():
@@ -351,23 +353,49 @@ def rapport_estimator_validate():
 def estimate_rapport(data):
     filename = config.RAPPORT_ESTIMATOR_MODEL
     loaded_model = pickle.load(open(filename, 'rb'))
+    #print(loaded_model.coef_)
     data = scale_data(data)
     result = loaded_model.predict(data)
     return result
 
-def get_rapport_reward(rapport_score, none_ratio):
-    #if "P" in user_type:
-    #   reward = none_ratio *100
-    #else:
-    reward = (rapport_score/7) * 100
-    #if rapport_score <4:
-    #    reward = -50
-    #elif rapport_score <5:
-    #    reward = 0
-    #elif rapport_score <6:
-    #    reward = 50
-    #elif rapport_score <7:
-    #    reward = 100
+def get_rapport_reward(mode, user_type, rapport_score, none_ratio):
+    if mode == 2:
+        if "P" in user_type:
+            reward = none_ratio *100
+            if none_ratio < 0.10:
+                reward = -20
+            elif rapport_score < 0.25:
+                reward = 0
+            elif rapport_score < 0.4:
+                reward = 50
+            elif rapport_score < 0.75:
+                reward = 75
+            elif rapport_score < 1:
+                reward = 100
+        else:
+            reward = (rapport_score/7) * 100
+            if rapport_score < 4:
+                reward = -20
+            elif rapport_score < 4.5:
+                reward = 0
+            elif rapport_score < 5:
+                reward = 50
+            elif rapport_score < 5.5:
+                reward = 75
+            elif rapport_score < 7:
+                reward = 100
+    else:
+        reward = (rapport_score / 7) * 100
+        if rapport_score < 4:
+            reward = -20
+        elif rapport_score < 4.5:
+            reward = 0
+        elif rapport_score < 5:
+            reward = 50
+        elif rapport_score < 5.5:
+            reward = 75
+        elif rapport_score < 7:
+            reward = 100
     return reward
     #Todo CHange Reward function so that introduction gives some rapport?
 
@@ -378,8 +406,8 @@ if __name__ == '__main__':
 
 def test_re():
     data = []
-    data.extend([3, 3, 2, 2, 0])
-    data.extend([2, 3, 0, 3, 1])
+    data.extend([0, 0, 4, 4, 2])
+    data.extend([0, 2, 3, 4, 2])
     rapport = ml_models.estimate_rapport(data)
     print("Rapport: " + str(rapport))
 

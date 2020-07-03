@@ -64,6 +64,7 @@ PRETRAIN_QTABLE = "./resources/agent/pretrain_qtable.csv"
 RAPPORT_GROUPS = "./resources/training_dialogues/rapport_groups.csv"
 RULE_BASED_INTERACTIONS_FILE = "./resources/generated_rule_based_interactions.csv"
 RL_INTERACTIONS_FILE = "./resources/generated_rl_interactions.csv"
+RL_INTERACTIONS_FILE_BIMODAL = "./resources/generated_rl_interactions_bimodal.csv"
 
 
 # Training Related
@@ -75,7 +76,7 @@ VERBOSE_TRAINING = 0 #0 = nothing printed; 1 = reward only; 2 = more
 
 
 LEARNING_RATE = 0.65
-GAMMA = 0.65
+GAMMA = 0.95
 EPSILON = 1.0  #
 EPSILON_MIN = 0.005  # Minimum greed 0.05%
 EPSILON_DECAY = 0.9995  # Decay multiplied with epsilon after each episode

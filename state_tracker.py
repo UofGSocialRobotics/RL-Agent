@@ -6,9 +6,10 @@ import config
 class DialogState():
 
     def __init__(self):
-        self.set_initial_state()
+        #self.set_initial_state()
+        self.user_type = ""
 
-    def set_initial_state(self):
+    def set_initial_state(self, user):
         self.full_dialog = {}
         self.dialog_done = False
         self.turns = 0
@@ -16,6 +17,7 @@ class DialogState():
         self.delivered_recos = 0
         self.state = {}
         self.reward = 0
+        self.user_type = user.user_type
 
         self.rec_I_user = [0, 0, 0, 0, 0]
         self.rec_I_agent = [0, 0, 0, 0, 0]
@@ -77,6 +79,8 @@ class DialogState():
     def append_data_from_simulation(self, agent_action, user_action, agent_previous_action, user_previous_action):
         if "NONE" in user_action['cs'] and "NONE" in agent_action['cs']:
             self.rec_P_agent += 1
+        if "NONE" in user_action['cs'] and agent_action['ack_cs'] == "":
+            self.rec_P_agent += 1
         if "NONE" not in user_action['cs']:
             ml_models.count(agent_action['cs'], self.rec_I_user)
         if "start" not in agent_previous_action['intent']:
@@ -112,11 +116,15 @@ class DialogState():
         user_action = utils.transform_user_action(self.state["current_user_action"])
         # Todo Encode Slots
         slots = self.encode_slots()
+        user_type = self.user_type
+        agent_task_cs = self.rec_I_user
+        agent_ack_cs = self.rec_I_agent
+        agent_none = self.rec_P_agent
         recos_good = self.encode_recos(self.accepted_recos)
         recos_done = self.encode_recos(self.delivered_recos)
 
         # Encoding State
-        state = str(agent_action[1]) + str(user_action) + str(slots) + str(recos_good) #+ str(recos_done)
+        state = str(agent_action[1]) + str(user_action) + str(slots) + str(recos_good) + str(user_type) + str(agent_task_cs) + str(agent_ack_cs) + str(agent_none)
         #state = previous_agent_action.toarray().tolist()[0] + previous_user_action.toarray().tolist()[0] + agent_action.toarray().tolist()[0] + user_action.toarray().tolist()[0]
         return state
 

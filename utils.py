@@ -286,11 +286,12 @@ def select_specific_action(user_action, agent_action):
 
 
 
-def plotting_rewards(title, rl_rewards, rule_based_rewards, subplots, col):
+def plotting_rewards(title, rl_rewards, bimodal_rl_rewards, rule_based_rewards, subplots, col):
     subplots[col].title.set_text(title)
-    subplots[col].plot(rl_rewards, label="rl_reward")
-    subplots[col].plot(rule_based_rewards, label="rule_based_reward")
-    subplots[col].legend(loc='best')
+    subplots[col].plot(rl_rewards, label="Unimodal RL")
+    subplots[col].plot(bimodal_rl_rewards, linestyle="--", label="Bimodal RL")
+    subplots[col].plot(rule_based_rewards, linestyle=":", label="Rule-based")
+    subplots[col].legend(loc='lower right')
 
 
 
